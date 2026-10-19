@@ -1,0 +1,27 @@
+ .gitignore                             |  49 [32m++++[m
+ README.md                              |  96 [32m++++++++[m
+ analysis/.gitkeep                      |   0
+ environment.md                         |  57 [32m+++++[m
+ experiments/configs/.gitkeep           |   0
+ experiments/configs/workload_index.csv |  11 [32m+[m
+ literature/.gitkeep                    |   0
+ paper/.gitkeep                         |   0
+ requirements.txt                       |   8 [32m+[m
+ results/figures/.gitkeep               |   0
+ src/Archive/baseline_pipeline.py       | 130 [32m++++++++++[m
+ src/Archive/instrumentation_v1.py      | 366 [32m++++++++++++++++++++++++++++[m
+ src/Archive/run_a1_experiments_v1.py   | 148 [32m+++++++++++[m
+ src/Archive/spark_config_v1.py         | 149 [32m++++++++++++[m
+ src/Archive/spark_config_v1_bkp.py     | 149 [32m++++++++++++[m
+ src/__init__.py                        |   0
+ src/baseline_pipeline.py               | 131 [32m++++++++++[m
+ src/environment_report.py              | 129 [32m++++++++++[m
+ src/explore_partition_curve.py         |  81 [32m+++++++[m
+ src/instrumentation.py                 | 432 [32m+++++++++++++++++++++++++++++++++[m
+ src/run_a1_experiments.py              | 148 [32m+++++++++++[m
+ src/spark_config.py                    | 172 [32m+++++++++++++[m
+ src/spark_config_v1.py                 | 149 [32m++++++++++++[m
+ src/verify_phase2_setup.py             |  98 [32m++++++++[m
+ src/verify_workloads.py                | 109 [32m+++++++++[m
+ src/workload_generator.py              | 284 [32m++++++++++++++++++++++[m
+ 26 files changed, 2896 insertions(+)
