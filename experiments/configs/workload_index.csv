@@ -1,0 +1,11 @@
+workload_id,data_volume,file_count_level,shuffle_volume_level,seed,num_orders,actual_file_count,actual_size_mb,orders_path,customers_path
+A1_small_low,small,medium,low,42,50000,10,0.59,data/generated\A1_small_low\orders,data/generated\A1_small_low\customers
+A1_small_high,small,medium,high,42,50000,10,0.59,data/generated\A1_small_high\orders,data/generated\A1_small_high\customers
+A1_large_low,large,medium,low,42,2000000,10,21.21,data/generated\A1_large_low\orders,data/generated\A1_large_low\customers
+A1_large_high,large,medium,high,42,2000000,10,25.68,data/generated\A1_large_high\orders,data/generated\A1_large_high\customers
+A2_small_low,small,low,high,42,50000,1,0.55,data/generated\A2_small_low\orders,data/generated\A2_small_low\customers
+A2_small_medium,small,medium,high,42,50000,10,0.59,data/generated\A2_small_medium\orders,data/generated\A2_small_medium\customers
+A2_small_high,small,high,high,42,50000,50,0.77,data/generated\A2_small_high\orders,data/generated\A2_small_high\customers
+A2_large_low,large,low,high,42,2000000,1,23.31,data/generated\A2_large_low\orders,data/generated\A2_large_low\customers
+A2_large_medium,large,medium,high,42,2000000,10,25.68,data/generated\A2_large_medium\orders,data/generated\A2_large_medium\customers
+A2_large_high,large,high,high,42,2000000,50,28.25,data/generated\A2_large_high\orders,data/generated\A2_large_high\customers
