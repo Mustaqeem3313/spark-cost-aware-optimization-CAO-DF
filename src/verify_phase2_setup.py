@@ -1,97 +1,113 @@
-"""
-verify_phase2_setup.py
-========================
-Run this ONE script after setting up your environment. If it prints
-"PHASE 2 COMPLETE" at the end, your environment is correctly configured
-and you're ready for Phase 3/4.
+"""Environment check: run after setup to confirm the machine can run the study.
 
-Usage:
-    python3 src/verify_phase2_setup.py
+Checks pinned packages, Java, the project SparkSession settings,
+``environment.md``, and the baseline pipeline (correctness and shuffle plan).
+
+Usage::
+
+    python src/verify_phase2_setup.py        # exit code 0 = ready, 1 = fix the FAIL items
 """
 
-import sys
-import os
+from __future__ import annotations
+
 import subprocess
+import sys
+from collections.abc import Callable
+from pathlib import Path
 
-# Ensure this works whether run as `python3 src/verify_phase2_setup.py`
-# from the project root, or invoked from elsewhere.
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-def check(label, fn):
+from src.paths import ENVIRONMENT_MD_PATH
+
+EXPECTED_PYSPARK_VERSION = "3.5.1"
+
+
+def _check(label: str, fn: Callable[[], None]) -> bool:
     try:
         fn()
         print(f"  [PASS] {label}")
         return True
-    except Exception as e:
-        print(f"  [FAIL] {label} -- {e}")
+    except Exception as exc:
+        print(f"  [FAIL] {label} -- {exc}")
         return False
 
 
-def main():
-    print("=" * 60)
-    print("PHASE 2 SETUP VERIFICATION")
-    print("=" * 60)
+def check_imports() -> None:
+    import importlib
 
-    results = []
+    for module in ("pandas", "psutil", "pyarrow", "sparkmeasure"):
+        importlib.import_module(module)
+    import pyspark
 
-    print("\n1. Checking pinned package imports...")
-    def imports():
-        import pyspark, psutil, pandas, pyarrow
-        assert pyspark.__version__ == "3.5.1", f"Expected pyspark 3.5.1, got {pyspark.__version__}"
-    results.append(check("pyspark/psutil/pandas/pyarrow import correctly", imports))
+    assert pyspark.__version__ == EXPECTED_PYSPARK_VERSION, \
+        f"expected pyspark {EXPECTED_PYSPARK_VERSION}, got {pyspark.__version__}"
 
-    print("\n2. Checking Java is available...")
-    def java_check():
-        result = subprocess.run(["java", "-version"], capture_output=True, text=True)
-        assert result.returncode == 0, "java -version failed"
-    results.append(check("Java is installed and on PATH", java_check))
 
-    print("\n3. Checking SparkSession builds with project config...")
-    def spark_check():
-        from src.spark_config_v1 import get_spark_session
-        spark = get_spark_session("phase2_verify", shuffle_partitions=50, adaptive_enabled=False)
-        assert spark.conf.get("spark.sql.adaptive.enabled") == "false", "AQE was not disabled!"
-        assert spark.conf.get("spark.sql.shuffle.partitions") == "50", "shuffle.partitions not applied!"
+def check_java() -> None:
+    result = subprocess.run(["java", "-version"], capture_output=True, text=True)
+    assert result.returncode == 0, "`java -version` failed -- install JDK 17 and set JAVA_HOME"
+
+
+def check_spark_session() -> None:
+    from src.spark_config import get_spark_session
+
+    spark = get_spark_session("setup_check", shuffle_partitions=50)
+    try:
+        assert spark.conf.get("spark.sql.adaptive.enabled") == "false", "AQE is not disabled"
+        assert spark.conf.get("spark.sql.shuffle.partitions") == "50", "shuffle.partitions not applied"
+    finally:
         spark.stop()
-    results.append(check("SparkSession builds with AQE off + correct shuffle.partitions", spark_check))
 
-    print("\n4. Checking environment.md exists...")
-    def env_md_check():
-        with open("environment.md") as f:
-            content = f.read()
-        assert "CPU model" in content, "environment.md looks malformed"
-    results.append(check("environment.md exists and looks valid", env_md_check))
 
-    print("\n5. Checking baseline pipeline runs and shuffles correctly...")
-    def pipeline_check():
-        from src.spark_config_v1 import get_spark_session
-        from src.baseline_pipeline_v1 import run_pipeline, verify_shuffle_plan, verify_correctness
+def check_environment_md() -> None:
+    assert ENVIRONMENT_MD_PATH.exists(), "environment.md missing -- run src/environment_report.py"
+    assert "CPU model" in ENVIRONMENT_MD_PATH.read_text(encoding="utf-8"), "environment.md looks malformed"
 
-        spark = get_spark_session("phase2_verify_pipeline", shuffle_partitions=10, adaptive_enabled=False)
+
+def check_pipeline() -> None:
+    from src.baseline_pipeline import run_pipeline, verify_correctness, verify_shuffle_plan
+    from src.spark_config import get_spark_session
+
+    spark = get_spark_session("setup_check_pipeline", shuffle_partitions=10)
+    try:
         orders = spark.createDataFrame(
-            [(1, 101, "electronics", 250.0, "2026-01-01"),
-             (2, 102, "grocery", 40.0, "2026-01-01")],
-            ["order_id", "customer_id", "product_category", "amount", "order_date"]
+            [(1, 101, "electronics", 250.0, "2026-01-01"), (2, 102, "grocery", 40.0, "2026-01-01")],
+            ["order_id", "customer_id", "product_category", "amount", "order_date"],
         )
         customers = spark.createDataFrame(
             [(101, "north", "retail"), (102, "south", "retail")],
-            ["customer_id", "region", "segment"]
+            ["customer_id", "region", "segment"],
         )
         result = run_pipeline(spark, orders, customers)
         verify_correctness(orders, result)
-        shuffle_ok = verify_shuffle_plan(result)
+        assert verify_shuffle_plan(result), "pipeline plan does not shuffle both join sides"
+    finally:
         spark.stop()
-        assert shuffle_ok, "Pipeline did not shuffle as expected"
-    results.append(check("Baseline pipeline runs, is correct, and shuffles", pipeline_check))
+
+
+def main() -> None:
+    print("=" * 60 + "\nENVIRONMENT VERIFICATION\n" + "=" * 60)
+    checks = [
+        ("Pinned packages import (pyspark, psutil, pandas, pyarrow, sparkmeasure)", check_imports),
+        ("Java is installed and on PATH", check_java),
+        ("SparkSession builds with AQE off and requested shuffle.partitions", check_spark_session),
+        ("environment.md exists and looks valid", check_environment_md),
+        ("Baseline pipeline runs, is correct, and shuffles", check_pipeline),
+    ]
+    results = []
+    for number, (label, fn) in enumerate(checks, start=1):
+        print(f"\n{number}. {label}")
+        results.append(_check(label, fn))
 
     print("\n" + "=" * 60)
     if all(results):
-        print("PHASE 2 COMPLETE -- environment is correctly configured.")
-        print("Next: Phase 3 (finalize baseline pipeline) / Phase 4 (workload generator)")
+        print("ENVIRONMENT READY.")
+        print("=" * 60)
     else:
-        print("PHASE 2 INCOMPLETE -- fix the FAIL items above before proceeding.")
+        print("ENVIRONMENT INCOMPLETE -- fix the FAIL items above.")
+        print("=" * 60)
         sys.exit(1)
-    print("=" * 60)
 
 
 if __name__ == "__main__":

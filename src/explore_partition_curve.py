@@ -1,80 +1,60 @@
-"""
-explore_partition_curve.py   (pilot v2 -- choose the formal partition grid)
-=============================================================================
-A short exploratory sweep on the two most contrasting workloads, run BEFORE
-the formal A1 matrix, to see where the runtime-vs-partitions curve bends on
-this machine. Results go to results/raw/pilot_a1_v2_sweep.csv (experiment_action
-'A1_sweep') and are NOT part of the formal dataset -- they only inform which
-partition values the formal matrix tests.
+"""Exploratory partition sweep used to choose the formal A1 grid (not part of the formal dataset).
 
-Usage:
+Runs the two most contrasting workloads across a wide range of shuffle-partition
+settings to locate where the runtime curve bends on the study machine. The
+grid includes 12, the logical core count of the study machine, because
+``local[*]`` runs one task per core.
+
+Output: ``results/raw/pilot_a1_v2_sweep.csv`` (``experiment_action = "A1_sweep"``).
+
+Usage::
+
     python src/explore_partition_curve.py
-    python src/explore_partition_curve.py --force      # skip RAM/AC guard (debug only)
+    python src/explore_partition_curve.py --force    # debugging only
 """
 
-import sys
-import random
-import argparse
+from __future__ import annotations
 
-sys.path.insert(0, ".")
+import argparse
+import sys
+from pathlib import Path
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 import pandas as pd
-from src.spark_config import get_spark_session
-from src.baseline_pipeline import execute_pipeline, PIPELINE_VERSION
-from src.instrumentation import (preflight_resource_check, load_and_cache_workloads,
-                                  run_and_measure, append_results)
+
+from src.experiment_runner import run_randomized_blocks, summarize_cells
+from src.instrumentation import load_and_cache_workloads, preflight_resource_check
+from src.paths import RESULTS_RAW_DIR
+from src.spark_config import SHUFFLE_PARTITIONS_DEFAULT, get_spark_session
 
 SWEEP_WORKLOADS = ["A1_small_high", "A1_large_high"]
-SWEEP_PARTITIONS = [1, 2, 4, 8, 16, 50, 200, 400]
-BLOCKS = 3
-SWEEP_CSV = "results/raw/pilot_a1_v2_sweep.csv"
+SWEEP_PARTITIONS = [1, 2, 4, 8, 12, 16, 50, 200, 400]
+SWEEP_BLOCKS = 3
+RUN_ORDER_SEED = 7
+SWEEP_CSV_PATH = RESULTS_RAW_DIR / "pilot_a1_v2_sweep.csv"
 
 
-def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--force", action="store_true")
-    args = ap.parse_args()
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Exploratory A1 partition sweep.")
+    parser.add_argument("--force", action="store_true",
+                        help="ignore the RAM / AC-power pre-flight check (debugging only)")
+    args = parser.parse_args()
+
     preflight_resource_check(force=args.force)
-    random.seed(7)
-
-    spark = get_spark_session("A1_sweep", shuffle_partitions=200, adaptive_enabled=False, enable_sparkmeasure=True)
+    spark = get_spark_session("A1_sweep", shuffle_partitions=SHUFFLE_PARTITIONS_DEFAULT, enable_sparkmeasure=True)
     print("Loading and caching sweep workloads (untimed)...")
-    wl = load_and_cache_workloads(spark, SWEEP_WORKLOADS)
-    cells = [(w, p) for w in SWEEP_WORKLOADS for p in SWEEP_PARTITIONS]
+    workloads = load_and_cache_workloads(spark, SWEEP_WORKLOADS)
 
-    warm = cells.copy(); random.shuffle(warm)
-    print(f"\nSession warm-up ({len(warm)} untimed executions)...")
-    for w, p in warm:
-        spark.conf.set("spark.sql.shuffle.partitions", p)
-        execute_pipeline(spark, wl[w][0], wl[w][1])
-
-    rows = []
-    for block in range(1, BLOCKS + 1):
-        order = cells.copy(); random.shuffle(order)
-        print(f"\n=== Sweep block {block}/{BLOCKS} ===")
-        for w, p in order:
-            o, c, meta = wl[w]
-            spark.conf.set("spark.sql.shuffle.partitions", p)
-            md = {"pipeline_version": PIPELINE_VERSION, "workload_id": w, "experiment_action": "A1_sweep",
-                  "config_label": f"shuffle{p}", "shuffle_partitions": p, "adaptive_enabled": False,
-                  "repetition_block": block, **meta}
-            res = run_and_measure(spark, lambda o=o, c=c: execute_pipeline(spark, o, c), md,
-                                   warmup_runs=1, measured_runs=1, use_sparkmeasure=True)
-            append_results(res, path=SWEEP_CSV)
-            rows.extend(r for r in res if not r["is_warmup"])
+    results = run_randomized_blocks(spark, workloads, SWEEP_PARTITIONS, SWEEP_BLOCKS, RUN_ORDER_SEED,
+                                    experiment_action="A1_sweep", results_path=SWEEP_CSV_PATH)
     spark.stop()
 
-    df = pd.DataFrame(rows)
-    g = df.groupby(["workload_id", "shuffle_partitions"]).agg(
-        median_wall_s=("wall_clock_seconds", "median"),
-        min_wall_s=("wall_clock_seconds", "min"),
-        max_wall_s=("wall_clock_seconds", "max"),
-        median_exec_run_s=("executor_run_time_ms", lambda x: x.median() / 1000),
-        median_spill_mb=("disk_bytes_spilled", lambda x: x.median() / 1e6),
-        median_shuffle_mb=("shuffle_bytes_written", lambda x: x.median() / 1e6),
-    ).round(2)
     pd.set_option("display.width", 200)
-    print("\n" + "=" * 72 + "\nSWEEP RESULT (paste this back)\n" + "=" * 72)
-    print(g.to_string())
-    print(f"\nRaw rows: {SWEEP_CSV}")
+    print("\n" + "=" * 72 + "\nSWEEP RESULT\n" + "=" * 72)
+    print(summarize_cells(results).to_string(index=False))
+    print(f"\nRaw rows: {SWEEP_CSV_PATH}")
 
 
 if __name__ == "__main__":

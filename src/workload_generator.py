@@ -1,78 +1,65 @@
-"""
-workload_generator.py
-======================
-Deterministic synthetic workload generator for A1/A2 experiments.
+"""Deterministic synthetic workload generator for the A1 and A2 experiments.
 
-Schema matches baseline_pipeline.py exactly -- nothing in the pipeline
-needs to change to consume this generator's output.
-    orders:    order_id, customer_id, product_category, amount, order_date
-    customers: customer_id, region, segment
+Schema (matches ``baseline_pipeline.py``):
 
-DESIGN DECISIONS (documented, not hidden -- these belong in your paper's
-Methodology section almost verbatim):
+* ``orders``:    ``order_id, customer_id, product_category, amount, order_date``
+* ``customers``: ``customer_id, region, segment``
 
-1. TRUE reproducibility via numpy, not Spark's F.rand(seed=...).
-   Data is generated with a numpy-seeded RNG on the driver, then converted
-   to a Spark DataFrame via pandas + Arrow. Spark's own F.rand(seed=...) is
-   only deterministic under fixed partition count / parallelism, which is a
-   weaker guarantee than this study needs. Numpy's seeded RNG gives
-   identical bytes for a given seed on any machine, independent of Spark
-   internals.
+Design
+------
+1. **Reproducibility.** Data is drawn from a seeded NumPy ``Generator`` on the
+   driver and converted to Spark, so a seed produces identical data on any
+   machine. Spark's ``F.rand(seed)`` is deterministic only under fixed
+   partitioning, which is a weaker guarantee.
+2. **Data volume** is the order row count (small / medium / large).
+3. **File count** is set by ``repartition(N)`` before the Parquet write; it is
+   the A2 (compaction) factor.
+4. **Shuffle volume** is set by filter selectivity: the fraction of orders with
+   ``amount > 0`` that survive the pipeline's filter and enter the shuffle.
 
-2. Data volume = total row count (Small / Medium / Large).
+Each workload gets a ``manifest.json`` recording both the requested levels and
+what was actually written (rows, files, bytes), so every factor level is
+measured rather than assumed.
 
-3. File count / fragmentation is controlled by .repartition(N) before
-   write -- this is what determines how many physical Parquet files land
-   on disk, which is exactly what A2 (compaction) experiments vary.
+Usage::
 
-4. Shuffle volume is controlled via FILTER SELECTIVITY: the fraction of
-   orders with amount > 0 (the baseline pipeline's own filter condition).
-   "High shuffle volume" = most rows survive the filter and flow into the
-   Join+GroupBy shuffle stages. "Low shuffle volume" = most rows are
-   filtered out before any shuffle happens. This ties the workload
-   variable directly to pipeline behavior instead of an arbitrary knob.
-
-Every generated workload gets a manifest.json recording BOTH the requested
-parameters AND the actually-measured output (row count, file count, size
-on disk) -- so "did fragmentation actually vary the way I intended?" is
-answered by measurement, never assumed.
+    python src/workload_generator.py      # generate all 10 workloads + index, then run an integration check
 """
 
-import os
+from __future__ import annotations
+
 import json
-import glob
+import sys
+from pathlib import Path
+from typing import Any
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 import numpy as np
 import pandas as pd
 from pyspark.sql import SparkSession
 
-# ----------------------------------------------------------------------
-# Fixed level definitions -- change these constants, not the logic below,
-# if you need different sizes. Document any change with a date, the same
-# way you would for environment.md.
-# ----------------------------------------------------------------------
-DATA_VOLUME_LEVELS = {
-    "small": 50_000,
-    "medium": 500_000,
-    "large": 2_000_000,
-}
+from src.paths import DATA_GENERATED_DIR, WORKLOAD_INDEX_PATH, from_project_relative, to_project_relative
 
-FILE_COUNT_LEVELS = {   # number of output Parquet files for the orders table
-    "low": 1,
-    "medium": 10,
-    "high": 50,
-}
+DATA_SEED = 42
 
-SHUFFLE_VOLUME_LEVELS = {   # fraction of orders with amount > 0
-    "low": 0.15,
-    "high": 0.85,
-}
+DATA_VOLUME_LEVELS = {"small": 50_000, "medium": 500_000, "large": 2_000_000}
+FILE_COUNT_LEVELS = {"low": 1, "medium": 10, "high": 50}
+SHUFFLE_VOLUME_LEVELS = {"low": 0.15, "high": 0.85}  # fraction of orders with amount > 0
+
+MIN_CUSTOMERS = 500
+ORDERS_PER_CUSTOMER = 100
+CUSTOMER_FILE_COUNT = 2
 
 REGIONS = ["north", "south", "east", "west"]
 SEGMENTS = ["retail", "enterprise", "smb"]
 PRODUCT_CATEGORIES = ["electronics", "grocery", "apparel", "home", "sports"]
 
-OUTPUT_ROOT = "data/generated"
-INDEX_PATH = "experiments/configs/workload_index.csv"
+INDEX_COLUMNS = [
+    "workload_id", "data_volume", "file_count_level", "shuffle_volume_level", "seed",
+    "num_orders", "actual_file_count", "actual_size_mb", "orders_path", "customers_path",
+]
 
 
 def _generate_customers(rng: np.random.Generator, num_customers: int) -> pd.DataFrame:
@@ -83,14 +70,13 @@ def _generate_customers(rng: np.random.Generator, num_customers: int) -> pd.Data
     })
 
 
-def _generate_orders(rng: np.random.Generator, num_orders: int, num_customers: int,
-                      shuffle_fraction: float) -> pd.DataFrame:
+def _generate_orders(
+    rng: np.random.Generator, num_orders: int, num_customers: int, shuffle_fraction: float
+) -> pd.DataFrame:
     customer_ids = rng.integers(1, num_customers + 1, size=num_orders)
     categories = rng.choice(PRODUCT_CATEGORIES, size=num_orders)
 
-    # shuffle_fraction of rows get a positive amount (survive the pipeline's
-    # `amount > 0` filter and flow into the shuffle stages); the rest get a
-    # non-positive amount (filtered out before any shuffle).
+    # Rows with a positive amount survive the pipeline's `amount > 0` filter.
     survives_filter = rng.random(num_orders) < shuffle_fraction
     positive_amounts = rng.uniform(5, 1000, size=num_orders).round(2)
     negative_amounts = -rng.uniform(1, 50, size=num_orders).round(2)
@@ -109,56 +95,50 @@ def _generate_orders(rng: np.random.Generator, num_orders: int, num_customers: i
     })
 
 
-def generate_workload(spark: SparkSession, workload_id: str, data_volume: str,
-                       file_count_level: str, shuffle_volume_level: str,
-                       seed: int = 42, output_root: str = OUTPUT_ROOT) -> dict:
+def generate_workload(
+    spark: SparkSession,
+    workload_id: str,
+    data_volume: str,
+    file_count_level: str,
+    shuffle_volume_level: str,
+    seed: int = DATA_SEED,
+    output_root: Path = DATA_GENERATED_DIR,
+) -> dict[str, Any]:
+    """Generate one workload, write it as Parquet, and return its manifest.
+
+    Raises:
+        ValueError: If a level name is not defined.
     """
-    Generates one workload, writes it to disk, and returns a manifest dict
-    (also written to manifest.json alongside the data).
-    """
-    if data_volume not in DATA_VOLUME_LEVELS:
-        raise ValueError(f"data_volume must be one of {list(DATA_VOLUME_LEVELS)}")
-    if file_count_level not in FILE_COUNT_LEVELS:
-        raise ValueError(f"file_count_level must be one of {list(FILE_COUNT_LEVELS)}")
-    if shuffle_volume_level not in SHUFFLE_VOLUME_LEVELS:
-        raise ValueError(f"shuffle_volume_level must be one of {list(SHUFFLE_VOLUME_LEVELS)}")
+    for name, value, levels in (("data_volume", data_volume, DATA_VOLUME_LEVELS),
+                                ("file_count_level", file_count_level, FILE_COUNT_LEVELS),
+                                ("shuffle_volume_level", shuffle_volume_level, SHUFFLE_VOLUME_LEVELS)):
+        if value not in levels:
+            raise ValueError(f"{name} must be one of {list(levels)}, got '{value}'")
 
     num_orders = DATA_VOLUME_LEVELS[data_volume]
     num_files = FILE_COUNT_LEVELS[file_count_level]
     shuffle_fraction = SHUFFLE_VOLUME_LEVELS[shuffle_volume_level]
-    num_customers = max(500, num_orders // 100)
+    num_customers = max(MIN_CUSTOMERS, num_orders // ORDERS_PER_CUSTOMER)
 
-    rng = np.random.default_rng(seed)  # numpy Generator -- true, portable determinism
-
+    rng = np.random.default_rng(seed)
     customers_pdf = _generate_customers(rng, num_customers)
     orders_pdf = _generate_orders(rng, num_orders, num_customers, shuffle_fraction)
 
-    workload_dir = os.path.join(output_root, workload_id)
-    orders_path = os.path.join(workload_dir, "orders")
-    customers_path = os.path.join(workload_dir, "customers")
+    workload_dir = Path(output_root) / workload_id
+    orders_path = workload_dir / "orders"
+    customers_path = workload_dir / "customers"
 
+    # Arrow conversion needs extra JVM flags on Java 17; generation is untimed,
+    # so the portable non-Arrow path is used.
     spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "false")
-    # Arrow-accelerated pandas->Spark conversion requires JVM module-access
-    # flags on Java 9+ that aren't set by default (and would need extra
-    # spark.driver.extraJavaOptions wiring to enable reliably across
-    # platforms). Since workload generation is never part of a timed
-    # experiment, correctness/portability matters far more here than speed
-    # -- so Arrow stays off and Spark's standard conversion path is used.
-
     orders_df = spark.createDataFrame(orders_pdf)
     customers_df = spark.createDataFrame(customers_pdf)
 
-    # File-count control lives here -- repartition BEFORE write determines
-    # how many physical Parquet files land on disk.
-    orders_df.repartition(num_files).write.mode("overwrite").parquet(orders_path)
-    # Customers is a small reference/dimension table -- fragmentation is not
-    # a variable of interest for it, so its file count stays fixed and small.
-    customers_df.repartition(2).write.mode("overwrite").parquet(customers_path)
+    orders_df.repartition(num_files).write.mode("overwrite").parquet(str(orders_path))
+    customers_df.repartition(CUSTOMER_FILE_COUNT).write.mode("overwrite").parquet(str(customers_path))
 
-    # Measure what actually landed on disk -- never assume the requested
-    # level produced what you expected.
-    actual_order_files = [f for f in glob.glob(os.path.join(orders_path, "*.parquet"))]
-    actual_size_bytes = sum(os.path.getsize(f) for f in actual_order_files)
+    order_files = list(orders_path.glob("*.parquet"))
+    size_bytes = sum(f.stat().st_size for f in order_files)
 
     manifest = {
         "workload_id": workload_id,
@@ -171,114 +151,81 @@ def generate_workload(spark: SparkSession, workload_id: str, data_volume: str,
         "measured": {
             "num_orders_generated": int(num_orders),
             "num_customers_generated": int(num_customers),
-            "actual_order_file_count": len(actual_order_files),
-            "actual_order_size_bytes": int(actual_size_bytes),
-            "actual_order_size_mb": round(actual_size_bytes / (1024 * 1024), 2),
+            "actual_order_file_count": len(order_files),
+            "actual_order_size_bytes": int(size_bytes),
+            "actual_order_size_mb": round(size_bytes / (1024 * 1024), 2),
             "requested_shuffle_fraction": shuffle_fraction,
             "actual_positive_amount_fraction": round(float((orders_pdf["amount"] > 0).mean()), 4),
         },
         "paths": {
-            "orders": orders_path,
-            "customers": customers_path,
+            "orders": to_project_relative(orders_path),
+            "customers": to_project_relative(customers_path),
         },
     }
+    (workload_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
 
-    with open(os.path.join(workload_dir, "manifest.json"), "w") as f:
-        json.dump(manifest, f, indent=2)
-
-    print(f"[workload_generator] Generated '{workload_id}': "
-          f"{manifest['measured']['num_orders_generated']} orders, "
-          f"{manifest['measured']['actual_order_file_count']} files "
-          f"(requested level: {file_count_level}), "
-          f"{manifest['measured']['actual_order_size_mb']} MB, "
-          f"{manifest['measured']['actual_positive_amount_fraction']:.2%} positive-amount rows "
-          f"(requested shuffle level: {shuffle_volume_level})")
-
+    measured = manifest["measured"]
+    print(f"[workload_generator] {workload_id}: {measured['num_orders_generated']} orders, "
+          f"{measured['actual_order_file_count']} files, {measured['actual_order_size_mb']} MB, "
+          f"{measured['actual_positive_amount_fraction']:.2%} positive-amount rows")
     return manifest
 
 
-def generate_all_workloads(spark: SparkSession, seed: int = 42) -> list:
+def generate_all_workloads(spark: SparkSession, seed: int = DATA_SEED) -> list[dict[str, Any]]:
+    """Generate the 10 study workloads and write the workload index.
+
+    * A1 (shuffle tuning): {small, large} x {low, high} shuffle volume, file count fixed at medium.
+    * A2 (compaction): {small, large} x {low, medium, high} file count, shuffle volume fixed at high.
     """
-    Generates exactly the workloads your compressed experiment matrix
-    (Phase 6 / Phase 7) needs -- no more, no less:
+    specs = [(f"A1_{vol}_{shuf}", vol, "medium", shuf)
+             for vol in ("small", "large") for shuf in ("low", "high")]
+    specs += [(f"A2_{vol}_{files}", vol, files, "high")
+              for vol in ("small", "large") for files in ("low", "medium", "high")]
 
-    A1 (shuffle/partition tuning) needs: 2 data volumes x 2 shuffle volumes
-      -> 4 workloads, file_count held at "medium" (irrelevant to A1)
+    manifests = [generate_workload(spark, wid, vol, files, shuf, seed=seed)
+                 for wid, vol, files, shuf in specs]
 
-    A2 (compaction) needs: 2 data volumes x 3 file-count/fragmentation levels
-      -> 6 workloads, shuffle_volume held at "high" (so compaction's benefit
-         on subsequent reads is actually observable)
+    index = pd.DataFrame([{
+        "workload_id": m["workload_id"],
+        "data_volume": m["requested"]["data_volume"],
+        "file_count_level": m["requested"]["file_count_level"],
+        "shuffle_volume_level": m["requested"]["shuffle_volume_level"],
+        "seed": m["seed"],
+        "num_orders": m["measured"]["num_orders_generated"],
+        "actual_file_count": m["measured"]["actual_order_file_count"],
+        "actual_size_mb": m["measured"]["actual_order_size_mb"],
+        "orders_path": m["paths"]["orders"],
+        "customers_path": m["paths"]["customers"],
+    } for m in manifests], columns=INDEX_COLUMNS)
 
-    Total: 10 pre-generated workloads. Writes an index CSV so the Phase 6/7
-    experiment runner can look up which dataset to load for each config row
-    without regenerating anything.
-    """
-    manifests = []
-
-    # --- A1 workloads: vary data_volume x shuffle_volume ---
-    for data_volume in ["small", "large"]:
-        for shuffle_volume in ["low", "high"]:
-            wid = f"A1_{data_volume}_{shuffle_volume}"
-            manifests.append(generate_workload(
-                spark, wid, data_volume=data_volume,
-                file_count_level="medium", shuffle_volume_level=shuffle_volume, seed=seed
-            ))
-
-    # --- A2 workloads: vary data_volume x file_count/fragmentation ---
-    for data_volume in ["small", "large"]:
-        for file_count in ["low", "medium", "high"]:
-            wid = f"A2_{data_volume}_{file_count}"
-            manifests.append(generate_workload(
-                spark, wid, data_volume=data_volume,
-                file_count_level=file_count, shuffle_volume_level="high", seed=seed
-            ))
-
-    os.makedirs(os.path.dirname(INDEX_PATH), exist_ok=True)
-    index_rows = []
-    for m in manifests:
-        index_rows.append({
-            "workload_id": m["workload_id"],
-            "data_volume": m["requested"]["data_volume"],
-            "file_count_level": m["requested"]["file_count_level"],
-            "shuffle_volume_level": m["requested"]["shuffle_volume_level"],
-            "seed": m["seed"],
-            "num_orders": m["measured"]["num_orders_generated"],
-            "actual_file_count": m["measured"]["actual_order_file_count"],
-            "actual_size_mb": m["measured"]["actual_order_size_mb"],
-            "orders_path": m["paths"]["orders"],
-            "customers_path": m["paths"]["customers"],
-        })
-    pd.DataFrame(index_rows).to_csv(INDEX_PATH, index=False)
-    print(f"\n[workload_generator] Wrote index of {len(index_rows)} workloads to {INDEX_PATH}")
-
+    WORKLOAD_INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
+    index.to_csv(WORKLOAD_INDEX_PATH, index=False)
+    print(f"[workload_generator] Wrote index of {len(index)} workloads to {to_project_relative(WORKLOAD_INDEX_PATH)}")
     return manifests
 
 
-if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, ".")
-    from src.spark_config_v1 import get_spark_session
+def main() -> None:
+    """Generate every workload, then check the pipeline consumes the output correctly."""
+    from src.baseline_pipeline import run_pipeline, verify_correctness, verify_shuffle_plan
+    from src.spark_config import get_spark_session
 
-    spark = get_spark_session("phase4_workload_generation", shuffle_partitions=50, adaptive_enabled=False)
-
+    spark = get_spark_session("workload_generation", shuffle_partitions=50)
     manifests = generate_all_workloads(spark)
 
-    print("\n" + "=" * 60)
-    print("INTEGRATION CHECK: does baseline_pipeline.py consume this output correctly?")
-    print("=" * 60)
-    from src.baseline_pipeline_v1 import run_pipeline, verify_correctness, verify_shuffle_plan
-
+    print("\n[workload_generator] Integration check against the baseline pipeline:")
     sample = manifests[0]
-    orders_df = spark.read.parquet(sample["paths"]["orders"])
-    customers_df = spark.read.parquet(sample["paths"]["customers"])
+    orders_df = spark.read.parquet(str(from_project_relative(sample["paths"]["orders"])))
+    customers_df = spark.read.parquet(str(from_project_relative(sample["paths"]["customers"])))
     result = run_pipeline(spark, orders_df, customers_df)
     verify_correctness(orders_df, result)
     shuffle_ok = verify_shuffle_plan(result)
-
     spark.stop()
 
-    if shuffle_ok:
-        print(f"\n[workload_generator] ALL CHECKS PASSED. Phase 4 complete -- "
-              f"10 workloads generated and verified compatible with the pipeline.")
-    else:
-        print("\n[workload_generator] INTEGRATION CHECK FAILED.")
+    if not shuffle_ok:
+        print("[workload_generator] Integration check FAILED.")
+        sys.exit(1)
+    print(f"[workload_generator] All checks PASSED -- {len(manifests)} workloads ready.")
+
+
+if __name__ == "__main__":
+    main()

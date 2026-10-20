@@ -1,109 +1,137 @@
-"""
-verify_workloads.py
-=====================
-The shuffle-scaling gate that the v1 pilot was missing.
+"""Shuffle-scaling gate: proves the workload factors really change shuffle cost.
 
-Phase 3's verify_shuffle_plan() only proves Exchange operators EXIST. The v1
-pilot showed that is not enough: shuffles existed but moved ~10 KB for every
-workload, so the "data volume" and "shuffle volume" factors changed nothing.
-This script runs the pipeline once per workload and measures how many bytes
-were actually shuffled, then checks that the workload factors really move it:
+``verify_shuffle_plan`` only proves Exchange operators exist. The v1 pilot had
+Exchanges that moved ~10 KB for every workload, so its factors were inert. This
+gate runs the pipeline once per A1 workload, reads shuffle bytes from Spark's
+REST API (no sparkMeasure dependency), and requires:
 
-    large-vs-small data volume   -> shuffle bytes grow   (>= 5x)
-    high-vs-low shuffle level    -> shuffle bytes grow   (>= 2x)
-    largest workload             -> shuffles >= 1 MB     (not trivial)
+* large vs small data volume  -> shuffle bytes >= 5x (at each shuffle level);
+* high vs low shuffle level   -> shuffle bytes >= 2x (at each data volume);
+* largest workload            -> >= 1 MB shuffled.
 
-Shuffle bytes are read from Spark's own REST API (localhost UI), so this has
-no dependency on the sparkMeasure JAR.
+Usage::
 
-Usage:   python src/verify_workloads.py
-Exit code 0 = gate passed, 1 = failed (do not run formal experiments).
+    python src/verify_workloads.py           # exit code 0 = PASSED, 1 = FAILED
 """
 
-import sys
+from __future__ import annotations
+
+import argparse
 import json
+import sys
 import time
 import urllib.request
+from pathlib import Path
 
-sys.path.insert(0, ".")
-from src.spark_config import get_spark_session
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from pyspark.sql import SparkSession
+
 from src.baseline_pipeline import execute_pipeline
 from src.instrumentation import load_workload, preflight_resource_check
+from src.spark_config import get_spark_session
 
 WORKLOADS = ["A1_small_low", "A1_small_high", "A1_large_low", "A1_large_high"]
 CHECK_PARTITIONS = 50
+MIN_VOLUME_RATIO = 5.0
+MIN_SHUFFLE_LEVEL_RATIO = 2.0
+MIN_LARGEST_SHUFFLE_BYTES = 1_000_000
+SETTLE_TIMEOUT_S = 15.0
+
+StageTotals = tuple[int, int, int]  # (shuffle write bytes, shuffle read bytes, completed stages)
 
 
-def _stage_totals(spark):
-    """Cumulative (shuffle_write_bytes, shuffle_read_bytes, n_completed_stages)."""
+def _stage_totals(spark: SparkSession) -> StageTotals:
+    """Cumulative shuffle bytes over all completed stages, from the Spark REST API."""
     sc = spark.sparkContext
     port = sc.uiWebUrl.rsplit(":", 1)[1].strip("/")
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # bypass any system proxy
     url = f"http://localhost:{port}/api/v1/applications/{sc.applicationId}/stages?status=complete"
-    with opener.open(url, timeout=5) as r:
-        stages = json.load(r)
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # bypass system proxies
+    with opener.open(url, timeout=5) as response:
+        stages = json.load(response)
     return (sum(s.get("shuffleWriteBytes", 0) for s in stages),
             sum(s.get("shuffleReadBytes", 0) for s in stages),
             len(stages))
 
 
-def _settled_totals(spark, min_stages):
-    """Spark's UI updates asynchronously -- wait until the totals stop changing."""
+def _settled_totals(spark: SparkSession, min_stages: int) -> StageTotals:
+    """Poll until more than ``min_stages`` stages are complete and the totals stop changing.
+
+    The Spark UI's status store updates asynchronously after a job finishes.
+    """
     last = None
-    deadline = time.time() + 15
+    deadline = time.time() + SETTLE_TIMEOUT_S
     while time.time() < deadline:
-        cur = _stage_totals(spark)
-        if cur[2] > min_stages and cur == last:
-            return cur
-        last = cur
+        current = _stage_totals(spark)
+        if current[2] > min_stages and current == last:
+            return current
+        last = current
         time.sleep(0.5)
+    print("  WARNING: stage metrics did not settle within the timeout; using the latest values.")
     return last
 
 
-def main():
-    force = "--force" in sys.argv
-    preflight_resource_check(force=force)
-    spark = get_spark_session("verify_workloads", shuffle_partitions=CHECK_PARTITIONS, adaptive_enabled=False)
-    spark.conf.set("spark.sql.shuffle.partitions", CHECK_PARTITIONS)
-
+def measure_shuffle_bytes(spark: SparkSession) -> dict[str, int]:
+    """Execute the pipeline once per workload and return shuffle bytes written."""
     measured = {}
     for wid in WORKLOADS:
         orders_df, customers_df, meta = load_workload(spark, wid)
         orders_df, customers_df = orders_df.cache(), customers_df.cache()
-        orders_df.count(); customers_df.count()          # materialize cache (not measured)
-        before = _settled_totals(spark, -1)
-        execute_pipeline(spark, orders_df, customers_df)  # the measured execution
-        after = _settled_totals(spark, before[2])
-        wb, rb = after[0] - before[0], after[1] - before[1]
-        measured[wid] = wb
-        print(f"  {wid:15s} orders={meta['num_orders']:>8}  shuffle written={wb/1e6:9.2f} MB   read={rb/1e6:9.2f} MB")
+        orders_df.count()
+        customers_df.count()
 
-    spark.stop()
+        before = _settled_totals(spark, min_stages=-1)
+        execute_pipeline(spark, orders_df, customers_df)
+        after = _settled_totals(spark, min_stages=before[2])
+
+        written, read = after[0] - before[0], after[1] - before[1]
+        measured[wid] = written
+        print(f"  {wid:15s} orders={meta['num_orders']:>8}  "
+              f"shuffle written={written / 1e6:9.2f} MB  read={read / 1e6:9.2f} MB")
+    return measured
+
+
+def evaluate_gate(measured: dict[str, int]) -> bool:
+    """Print each gate check and return ``True`` only if all pass."""
+    checks = []
+    for level in ("low", "high"):
+        ratio = measured[f"A1_large_{level}"] / max(measured[f"A1_small_{level}"], 1)
+        checks.append((f"data volume moves shuffle bytes ({level} shuffle level): "
+                       f"large/small = {ratio:.1f}x (need >= {MIN_VOLUME_RATIO:.0f}x)",
+                       ratio >= MIN_VOLUME_RATIO))
+    for volume in ("small", "large"):
+        ratio = measured[f"A1_{volume}_high"] / max(measured[f"A1_{volume}_low"], 1)
+        checks.append((f"shuffle level moves shuffle bytes ({volume} data): "
+                       f"high/low = {ratio:.1f}x (need >= {MIN_SHUFFLE_LEVEL_RATIO:.0f}x)",
+                       ratio >= MIN_SHUFFLE_LEVEL_RATIO))
+    largest = measured["A1_large_high"]
+    checks.append((f"largest workload shuffles {largest / 1e6:.1f} MB "
+                   f"(need >= {MIN_LARGEST_SHUFFLE_BYTES / 1e6:.0f} MB)",
+                   largest >= MIN_LARGEST_SHUFFLE_BYTES))
 
     print("\nGATE CHECKS")
-    ok = True
-
-    def check(label, passed):
-        nonlocal ok
-        ok &= passed
+    for label, passed in checks:
         print(f"  [{'PASS' if passed else 'FAIL'}] {label}")
+    return all(passed for _, passed in checks)
 
-    for lvl in ("low", "high"):
-        r = measured[f"A1_large_{lvl}"] / max(measured[f"A1_small_{lvl}"], 1)
-        check(f"data volume moves shuffle bytes ({lvl} shuffle level): large/small = {r:.1f}x (need >= 5x)", r >= 5)
-    for vol in ("small", "large"):
-        r = measured[f"A1_{vol}_high"] / max(measured[f"A1_{vol}_low"], 1)
-        check(f"shuffle level moves shuffle bytes ({vol} data): high/low = {r:.1f}x (need >= 2x)", r >= 2)
-    check(f"largest workload shuffles a non-trivial amount: {measured['A1_large_high']/1e6:.1f} MB (need >= 1 MB)",
-          measured["A1_large_high"] >= 1e6)
 
-    print("\nGATE PASSED -- workload factors genuinely change shuffle cost." if ok
-          else "\nGATE FAILED -- do NOT run formal experiments; the workload factors are not doing their job.")
-    sys.exit(0 if ok else 1)
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Shuffle-scaling gate for the A1 workloads.")
+    parser.add_argument("--force", action="store_true",
+                        help="ignore the RAM / AC-power pre-flight check (debugging only)")
+    args = parser.parse_args()
+
+    preflight_resource_check(force=args.force)
+    spark = get_spark_session("verify_workloads", shuffle_partitions=CHECK_PARTITIONS)
+    measured = measure_shuffle_bytes(spark)
+    spark.stop()
+
+    passed = evaluate_gate(measured)
+    print("\nGATE PASSED -- workload factors change shuffle cost." if passed
+          else "\nGATE FAILED -- do not run formal experiments.")
+    sys.exit(0 if passed else 1)
 
 
 if __name__ == "__main__":
     main()
-
-
-#python src/explore_partition_curve.py

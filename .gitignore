@@ -1,49 +1,47 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
-*.pyd
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
 
 # Virtual environments
 venv/
 .venv/
-env/
 
-# Secrets and environment variables
+# Secrets (never commit credentials or access keys)
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+*accessKeys*.csv
 credentials.json
 secrets.json
 
 # Jupyter
 .ipynb_checkpoints/
 
-# Spark and Hadoop
+# Spark / Hadoop runtime artefacts
 spark-warehouse/
+spark-event-logs/
 metastore_db/
-derby.log/
-*.log
-logs/
+derby.log
 
-# Generated datasets and experiment outputs
-data/raw/
-data/generated/
-results/raw/
-results/processed/
+# Generated data (fully reproducible from src/workload_generator.py, seed 42)
+data/
 
-# Temporary files
+# Scratch output
+results/raw/smoke_test_results.csv
+environment.generated.md
 tmp/
-temp/
 *.tmp
 
-# IDE
+# Results (results/raw, results/processed) and run logs (logs/) are committed
+# deliberately as research evidence.
+
+# IDE / OS
 .vscode/
 .idea/
-
-# OS files
 .DS_Store
 Thumbs.db
