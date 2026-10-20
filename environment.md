@@ -51,7 +51,4 @@
 - [ ] Run order randomized within each repetition block
 
 ---
-*If you change machines partway through the study, re-run this script,
-rename the old file to environment_<date>.md, and note in your paper's
-Limitations section that results before/after this date used different
-hardware -- this is exactly the kind of detail a reviewer checks for.*
+

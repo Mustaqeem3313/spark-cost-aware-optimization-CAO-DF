@@ -9,7 +9,7 @@ and system resource sampling, and an append-only results CSV.
 This is the ONLY place experiment measurements get written -- Phase 6/7's
 experiment runner calls run_and_measure(), never writes results.csv by hand.
 
-Design decisions (belongs in your Methodology section):
+Design decisions (belongs in the Methodology section):
   - sparkmeasure gives real JVM-level metrics (executorCpuTime, shuffle
     bytes, GC time) -- far more informative than wall-clock alone, and
     exactly what Phase 8's cost model needs. It requires the sparkMeasure
