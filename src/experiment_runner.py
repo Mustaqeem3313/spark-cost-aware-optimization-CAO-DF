@@ -1,4 +1,5 @@
-"""Randomized complete-block executor shared by the A1 sweep and the formal A1 matrix.
+"""Randomized complete-block executor shared by the A1 sweep and the formal A1 matrix,
+plus the per-cell summary used by both A1 and A2.
 
 Protocol (Methodology section):
 
@@ -98,17 +99,23 @@ def run_randomized_blocks(
     return pd.DataFrame(measured_rows)
 
 
-def summarize_cells(results: pd.DataFrame) -> pd.DataFrame:
-    """Per-cell medians, IQR and CV of wall-clock time plus median Spark metrics."""
+def summarize_cells(results: pd.DataFrame, by: tuple[str, str] = ("workload_id", "shuffle_partitions")) -> pd.DataFrame:
+    """Per-cell medians, IQR and CV of wall-clock time plus median Spark metrics.
+
+    Args:
+        results: Measured rows.
+        by: The two columns that identify a cell -- ``(workload_id, shuffle_partitions)``
+            for A1, ``(workload_id, config_label)`` for A2.
+    """
     summary_rows = []
-    for (wid, partitions), cell in results.groupby(["workload_id", "shuffle_partitions"], sort=True):
+    for (wid, level), cell in results.groupby(list(by), sort=True):
         quality = check_measurement_quality(
             [{"wall_clock_seconds": t, "is_warmup": False} for t in cell["wall_clock_seconds"]],
             verbose=False,
         )
         summary_rows.append({
-            "workload_id": wid,
-            "shuffle_partitions": int(partitions),
+            by[0]: wid,
+            by[1]: int(level) if by[1] == "shuffle_partitions" else level,
             "n": len(cell),
             "median_wall_s": quality["median"],
             "iqr_wall_s": quality["iqr"],

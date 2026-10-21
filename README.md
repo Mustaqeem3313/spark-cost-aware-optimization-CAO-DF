@@ -61,10 +61,16 @@ Before any timed step: connect AC power, select the best-performance power mode 
 | 4. Shuffle-scaling gate | `python src\verify_workloads.py` | must print `GATE PASSED` |
 | 5. Exploratory sweep | `python src\explore_partition_curve.py` | `results/raw/pilot_a1_v2_sweep.csv` |
 | 6. Formal A1 matrix | `python src\run_a1_experiments.py 2>&1 \| Tee-Object logs\a1_formal.log` | `results/raw/experiment_results.csv`, `results/processed/a1_*.csv` |
+| 7. A2 pilot (gate) | `python src\run_a2_experiments.py --pilot` | `results/raw/pilot_a2.csv`, `results/processed/pilot_a2_*.csv` |
+| 8. Formal A2 matrix | `python src\run_a2_experiments.py 2>&1 \| Tee-Object logs\a2_formal.log` | `results/raw/experiment_results.csv`, `results/processed/a2_*.csv` |
 
 Workload data is deterministic (NumPy seed 42) and is not committed; step 3 recreates it exactly.
 
 The formal A1 matrix is 4 workloads x 8 partition settings {1, 2, 4, 8, 16, 50, 200, 400} x 5 randomized blocks = 160 measured runs. Each measured run is preceded by a discarded warm-up, and every cell is executed once untimed before block 1.
+
+The formal A2 matrix is 6 workloads (small/large x 1/10/50 files) x 3 stages (fragmented, compaction, compacted) x 5 blocks = 90 measured runs, with inputs read from Parquet on every run (no caching) and shuffle partitions held at the default 200.
+
+All findings, anomalies, limitations and decisions are recorded in [`docs/research_log.md`](docs/research_log.md).
 
 ## Repository layout
 
@@ -75,12 +81,15 @@ src/
   baseline_pipeline.py        frozen reference pipeline (v2)
   workload_generator.py       deterministic synthetic workloads + manifest per workload
   instrumentation.py          pre-flight check, measurement harness, results CSV writer
-  experiment_runner.py        randomized-block executor shared by the A1 runners
+  experiment_runner.py        randomized-block executor (A1) and per-cell summaries (A1, A2)
   verify_phase2_setup.py      environment check
   verify_workloads.py         shuffle-scaling gate
   explore_partition_curve.py  exploratory A1 sweep (chooses the formal grid)
   run_a1_experiments.py       formal A1 matrix
+  compaction.py               A2 action: rewrite fragmented Parquet into target-sized files
+  run_a2_experiments.py       A2 pilot and formal matrix (fragmented -> compaction -> compacted)
   environment_report.py       generates environment.md
+docs/research_log.md          dated record of runs, findings, limitations and decisions
 experiments/configs/          workload index
 results/raw/                  per-run measurements (append-only)
 results/processed/            per-cell summaries

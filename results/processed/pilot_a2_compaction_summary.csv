@@ -1,0 +1,7 @@
+workload_id,data_volume,file_count_level,input_files,n_blocks,median_before_s,median_after_s,median_copt_s,median_benefit_s,median_benefit_pct,blocks_after_faster,break_even_runs_wall,median_exec_benefit_s,median_exec_copt_s,break_even_runs_exec
+A2_large_low,large,low,1,3,5.2961,5.3795,1.0474,-0.0187,-0.0035,1,inf,-0.343,0.886,inf
+A2_small_high,small,high,50,3,3.4047,1.2557,0.2684,2.149,0.6669,3,1.0,26.916,0.169,1.0
+A2_small_medium,small,medium,10,3,2.9821,1.0821,0.2218,1.8458,0.6371,3,1.0,24.281,0.07,1.0
+A2_large_medium,large,medium,10,3,6.3391,4.9114,1.1085,1.4277,0.2176,3,1.0,50.06,0.977,1.0
+A2_small_low,small,low,1,3,1.0685,1.1023,0.1414,-0.0338,-0.0316,1,inf,0.319,0.031,1.0
+A2_large_high,large,high,50,3,6.9401,4.5775,1.1771,2.3182,0.326,3,1.0,50.882,1.05,1.0
