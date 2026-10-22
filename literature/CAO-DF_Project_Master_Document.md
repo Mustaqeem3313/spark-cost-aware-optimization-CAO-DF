@@ -75,19 +75,19 @@ Optimizing a Spark pipeline is not free: tuning shuffle partitions or compacting
 
 > *"I'm not making Spark faster. I'm researching whether making it faster — or compacting its data — is worth the cost for a given workload."*
 
-### 1.4 Status dashboard (20 Oct 2026)
+### 1.4 Status dashboard (22 Oct 2026)
 
 | Metric | Value |
 |---|---|
 | Total phases | **12** (Phase 0 – Phase 11) |
-| Completed | **6** (Phases 0, 1, 2, 3, 4, 5) |
-| In progress | **1** (Phase 6 — A1 experiments: pilot + redesign done, formal run pending) |
-| Not started | **5** (Phases 7, 8, 9, 10, 11) |
-| Overall progress | `██████░░░░░░` **6 / 12 complete (50 %)** — Phase 6 roughly 60 % done *(estimate)* |
-| Experimental data collected | Pilot only (v1: 60 runs, archived · v2 sweep: 48 runs, exploratory). **No formal results yet.** |
-| Schedule | **Behind the original 8-week plan** (planned end ≈ 24–27 Oct 2026) — see §19 for the re-baselined plan |
+| Completed | **8** (Phases 0 – 7) |
+| In progress | **0** — Phase 8 (cost model) is next |
+| Not started | **4** (Phases 8, 9, 10, 11) |
+| Overall progress | `████████░░░░` **8 / 12 complete (67 %)** |
+| Experimental data collected | **Formal A1** (E3, 160 runs, tag `a1-formal-v2`) · **Formal A2** (E5, 90 runs, tag `a2-formal-v2`) · A2 pilot (E4, 54 runs) |
+| Schedule | Re-baselined in §19.2; college deadline **15 Nov 2026** |
 
-> ⚠️ **Honest status note.** The pilot phase did its job: it exposed that the first pipeline design produced a degenerate shuffle (§16.3). That cost time but prevented a worthless Week-7 result. The formal A1 run has *not* happened yet; every number quoted in this document is pilot or exploratory evidence, not a research finding.
+> **Status note.** Formal results now exist for both actions. Findings, anomalies, limitations and decisions are recorded in `docs/research_log.md`, which is the authoritative record for the Results and Threats-to-Validity sections. Numbers in §16.5–16.6 and Appendix E remain pilot/exploratory evidence.
 
 ---
 
@@ -280,9 +280,9 @@ Single machine, not a distributed cluster · synthetic data · estimated, not bi
 
 ## 11. Literature Review
 
-**Deliverables.** `Literature_Matrix.xlsx` (24 papers, 6 themes) · `Literature_Review_Shaikh.docx` (prose, IEEE-cited, dated 29 Aug 2026) · full IEEE reference list in [Appendix A](#appendix-a--reference-list-ieee).
+**Deliverables.** `Literature_Matrix.xlsx` (29 papers, 6 themes) · `Literature_Review_Shaikh.docx` (prose, IEEE-cited, dated 29 Aug 2026; covers [1]–[24]) · full IEEE reference list in [Appendix A](#appendix-a--reference-list-ieee).
 
-> ⚠️ **Correction needed in the spreadsheet.** In `Literature_Matrix.xlsx`, the rows for Micky, PARIS, Smartpick and the cross-layer break-even paper carry wrong or placeholder author/venue metadata (an earlier draft). The `.docx` reference list — reproduced in Appendix A — is the verified, authoritative version. Fix the spreadsheet before it is shown to anyone.
+> ✅ **Spreadsheet metadata corrected (22 Oct 2026).** The Micky [22], PARIS [23], Smartpick [24] and cross-layer [20] rows now match the verified Appendix A list. Five further papers [25]–[29] were added after Crossref DOI verification. [27] and [28] are recorded at title/metadata level only: read the abstracts before citing them for anything beyond their existence.
 
 ### 11.1 Theme A — Spark configuration and execution tuning [1]–[7]
 
@@ -293,13 +293,13 @@ Automatic Spark tuning is a large field: ML performance-influence models [1], tu
 
 Workload characteristics are an accepted and effective signal: transfer learning across workloads (Rover) [8], runtime-statistics-driven AQE for lakehouses [9], large-scale cloud workload characterization [10], learning-based parameter recommendation from workload features [11]. **Limitation:** workload-awareness accelerates a performance search; it does not decide whether an optimization is justified.
 
-### 11.3 Theme C — Data compaction and small files [12]–[14]
+### 11.3 Theme C — Data compaction and small files [12]–[14], [27]–[29]
 
-**AutoComp** [12] (LinkedIn) is production compaction automation that explicitly balances compaction benefit and cost — the closest prior work on compaction economics. Practitioner sources [13] (Iceberg on EMR) and [14] (Delta Lake `OPTIMIZE` bin-packing) describe mechanisms and best practice without controlled quantitative evaluation of *when* compaction pays off.
+**AutoComp** [12] (LinkedIn) is production compaction automation that explicitly balances compaction benefit and cost — the closest prior work on compaction economics. Practitioner sources [13] (Iceberg on EMR) and [14] (Delta Lake `OPTIMIZE` bin-packing) describe mechanisms and best practice without controlled quantitative evaluation of *when* compaction pays off. LST-Bench [29] benchmarks log-structured tables over time, including maintenance operations, but measures rather than decides. Recent work learns compaction policies with reinforcement learning [27] or improves *how* small files are merged in HDFS [28]; neither offers an interpretable rule for *whether* compaction pays off over N future runs.
 
-### 11.4 Theme D — Table and data-layout optimization [15]–[16]
+### 11.4 Theme D — Table and data-layout optimization [15]–[16], [25]–[26]
 
-**PTO** [15] (SIGMOD 2026) is the single closest related work: an ML-driven, workload-driven predictor of whether a layout optimization (partitioning, target file size, Z-order…) will help *before* it is applied. It operates at production-catalog scale with learned cost models. Practitioner discussion of sort vs bin-pack compaction [16] shows multiple strategies exist but stays qualitative.
+**PTO** [15] (SIGMOD 2026) is the single closest related work: an ML-driven, workload-driven predictor of whether a layout optimization (partitioning, target file size, Z-order…) will help *before* it is applied. It operates at production-catalog scale with learned cost models. Practitioner discussion of sort vs bin-pack compaction [16] shows multiple strategies exist but stays qualitative. **AutoLiquid** [25] (Databricks, PVLDB 2026) autonomously changes clustering keys from workload telemetry with a verify-before-commit step, and **LayoutPilot** [26] (PVLDB 2026 demo) is an interactive what-if advisor for lakehouse layouts. Both confirm the industry trend toward workload-driven layout decisions; neither expresses the decision as a break-even over future executions.
 
 ### 11.5 Theme E — Optimization cost and break-even analysis [17]–[20]
 
@@ -337,6 +337,11 @@ CherryPick [21] (Bayesian optimization of cloud VM configurations), Micky [22] (
 | [22] | Micky (Hsu et al.) | IEEE CLOUD 2018 | F | Cheaper configuration search |
 | [23] | PARIS (Yadwadkar et al.) | SoCC 2017 | F | Cross-cloud VM selection |
 | [24] | Smartpick (Mohapatra & Oh) | Middleware 2023 | F | Serverless vs VM on Spark |
+| [25] | **AutoLiquid** (Nakandala et al.) | PVLDB 2026 | D | Autonomic, telemetry-driven layout (Databricks) |
+| [26] | LayoutPilot (Liu et al.) | PVLDB 2026 (demo) | D | Interactive layout advisor |
+| [27] | AutoCompactionAI (Venkatesan) | IEEE FMLDS 2025 | C | RL compaction policy — abstract to be read |
+| [28] | Chettaoui & Hkiri | J. Supercomput. 2025 | C | Small-file merging in HDFS — abstract to be read |
+| [29] | LST-Bench (Camacho-Rodríguez et al.) | PACMMOD / SIGMOD 2024 | C | Benchmark incl. table maintenance |
 
 ### 11.8 Synthesis
 
@@ -350,8 +355,9 @@ CherryPick [21] (Bayesian optimization of cloud VM configurations), Micky [22] (
 - [ ] Re-verify every DOI and page range once more before the final reference list.
 - [ ] Limit grey literature ([13], [14], [16]) in the paper; add URL + access date where kept.
 - [ ] Keep [20] clearly marked "preprint, not peer-reviewed", or drop it if space is tight.
-- [ ] Optional: add 3–5 more recent (2025–2026) papers on compaction/layout to strengthen themes C–D.
-- [ ] Fix the spreadsheet metadata (see warning above).
+- [x] Optional: add 3–5 more recent (2025–2026) papers on compaction/layout to strengthen themes C–D — added [25]–[29] (22 Oct 2026).
+- [x] Fix the spreadsheet metadata (see note above) — done 22 Oct 2026.
+- [ ] Read the abstracts of [27] and [28] before citing them in detail; add [25]–[29] to `Literature_Review_Shaikh.docx`.
 
 ---
 
@@ -461,9 +467,9 @@ decide(workload w, expected executions N):
 | E0 | A1 pilot, pipeline **v1** (60 runs) | First end-to-end test of the runner | ✅ Done — **archived as pilot evidence**; exposed a degenerate shuffle |
 | E1 | Shuffle-scaling gate (pipeline v2) | Prove workload factors really change shuffle bytes | ✅ **Passed** on the study machine |
 | E2 | Exploratory partition sweep (2 workloads × 8 settings × 3 blocks) | See the shape of the runtime-vs-partitions curve; fix the formal grid | ✅ Done (run under low free RAM; used for guidance only) |
-| E3 | **Formal A1 matrix** | RQ1 / RQ3 evidence for shuffle tuning | ⏳ **Next to run** |
-| E4 | A2 pilot (compaction) | Check compaction benefit is detectable above noise; pilot gate | ☐ To build |
-| E5 | **Formal A2 matrix** | RQ1 / RQ3 evidence for compaction | ☐ |
+| E3 | **Formal A1 matrix** | RQ1 / RQ3 evidence for shuffle tuning | ✅ Done 21 Oct — 160 runs; tag `a1-formal-v2` |
+| E4 | A2 pilot (compaction) | Check compaction benefit is detectable above noise; pilot gate | ✅ Done 21 Oct — gate **PASSED** |
+| E5 | **Formal A2 matrix** | RQ1 / RQ3 evidence for compaction | ✅ Done 21 Oct — 90 runs; tag `a2-formal-v2` |
 | E6 | Framework validation on unseen workloads | RQ2 / H2 | ☐ |
 
 ### 13.2 A1 — shuffle/partition tuning (formal)
@@ -491,7 +497,9 @@ decide(workload w, expected executions N):
 
 **Why the grid changed from 3 to 8 settings.** The pilot (v1) tested only {50, 200, 400} — all on the "too many partitions" side. The v2 sweep showed the optimum depends on the workload (about 1–2 for small data, about 4 for large data on this 4-thread machine), so the formal grid spans under-parallel (1, 2), near-core-count (4, 8), moderate (16, 50), default (200) and high (400).
 
-### 13.3 A2 — file compaction (design, to build in Phase 7)
+### 13.3 A2 — file compaction (built and run in Phase 7)
+
+*As run: shuffle partitions held at the static 200; compaction implemented with `coalesce`; run-order seed 456; no extra 500-file level (pilot gate passed). See `docs/research_log.md` §3.*
 
 | Item | Specification |
 |---|---|
@@ -638,13 +646,14 @@ spark-cost-aware-optimization/
 │   ├── baseline_pipeline.py      ✅ pipeline v2 + execute_pipeline + checks
 │   ├── workload_generator.py     ✅ seeded synthetic workloads
 │   ├── instrumentation.py        ✅ measurement protocol, CSV writer, pre-flight
-│   ├── run_a1_experiments.py     ✅ formal A1 runner (formal run pending)
+│   ├── run_a1_experiments.py     ✅ formal A1 runner (E3 done)
 │   ├── verify_workloads.py       ✅ shuffle-scaling gate
 │   ├── explore_partition_curve.py✅ exploratory sweep
 │   ├── environment_report.py     ✅ generates environment.md
 │   ├── verify_phase2_setup.py    ✅ 5-check environment verifier
-│   ├── compaction.py             ☐ (Phase 7 — A2 action)
-│   ├── run_a2_experiments.py     ☐ (Phase 7)
+│   ├── compaction.py             ✅ A2 action (coalesce to ceil(size / 128 MB))
+│   ├── run_a2_experiments.py     ✅ A2 pilot + formal runner (E4, E5 done)
+│   ├── robustness_check.py       ✅ A1 outlier sensitivity check
 │   ├── cost_model.py             ☐ (Phase 8)
 │   └── decision_framework.py     ☐ (Phase 9)
 ├── experiments/configs/workload_index.csv     # written by the generator
@@ -726,20 +735,24 @@ Generate `environment.md` from real hardware/software and the fixed config const
 | **12 Sep** | **Phase 5:** instrumentation verified with real sparkMeasure metrics (after the 0.24 → 0.28 fix) |
 | **11 Oct** | **Phase 6 pilot (v1):** 60 A1 runs completed in ≈ 7 min — revealed a degenerate shuffle |
 | **16 Oct** | **Phase 6 redesign (v2):** shuffle-scaling gate passed; exploratory sweep completed |
-| 20 Oct | This master document |
+| 20 Oct | This master document; environment rebuilt on the official study machine; codebase refactored |
+| **21 Oct** | **Phase 6 done:** E2 sweep + **formal A1** (160 runs) · **Phase 7 done:** `compaction.py`, A2 pilot (gate passed), **formal A2** (90 runs) · research log started |
+| 22 Oct | Literature matrix corrected and extended to 29 papers; A1 outlier sensitivity check |
 
 ### 16.2 Deliverables produced
 
 | Deliverable | Phase | Status |
 |---|---|---|
 | `Phase0_Technical_Understanding.md` | 0 | ✅ |
-| `Literature_Matrix.xlsx`, `Literature_Review_Shaikh.docx` | 1 | ✅ (spreadsheet metadata fix pending) |
+| `Literature_Matrix.xlsx`, `Literature_Review_Shaikh.docx` | 1 | ✅ (matrix metadata fixed and extended to 29 papers, 22 Oct 2026) |
 | Proposal PDF, framework PDF, execution plans | — | ✅ |
 | Verified environment + `environment.md` + `requirements.txt` | 2 | ✅ |
 | Pipeline v1 → **v2** | 3 | ✅ |
 | Workload generator + 10 workloads + index | 4 | ✅ |
 | Instrumentation (34-column schema, sparkMeasure, pre-flight) | 5 | ✅ |
-| A1 runner, shuffle-scaling gate, exploratory sweep | 6 | ◐ (formal run pending) |
+| A1 runner, shuffle-scaling gate, exploratory sweep, **formal A1** | 6 | ✅ (tag `a1-formal-v2`) |
+| `compaction.py`, A2 runner, A2 pilot, **formal A2** | 7 | ✅ (tag `a2-formal-v2`) |
+| `docs/research_log.md` (findings, limitations, decisions) | 6–7 | ✅ (living document) |
 | GitHub repository | — | ✅ https://github.com/Mustaqeem3313/spark-cost-aware-optimization-CAO-DF |
 
 ### 16.3 The v1 pilot — what it showed (and why we redesigned)
@@ -822,9 +835,9 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 | **3** | Baseline pipeline | One reproducible pipeline that provably shuffles and is correct | `baseline_pipeline.py` (**v2**) | ✅ **Done** |
 | **4** | Workload generator | Deterministic, parameterized datasets | `workload_generator.py`, 10 workloads, index | ✅ **Done** |
 | **5** | Instrumentation | Real Spark metrics, warm-up/repetition protocol, results CSV | `instrumentation.py` | ✅ **Done** |
-| — | **Pilot gate** | Check effects exceed noise before scaling | Pre-registered criterion (§13.4) | ◐ A1 half passed · A2 half pending |
-| **6** | A1 — shuffle/partition tuning | Measure cost-performance of `spark.sql.shuffle.partitions` | Formal A1 rows + best-config table | ◐ **In progress** (pilot + redesign done; formal run next) |
-| **7** | A2 — file compaction | Measure compaction cost (`Copt`) and benefit | A2 rows + compaction cost/benefit table | ☐ Not started |
+| — | **Pilot gate** | Check effects exceed noise before scaling | Pre-registered criterion (§13.4) | ✅ A1 and A2 passed |
+| **6** | A1 — shuffle/partition tuning | Measure cost-performance of `spark.sql.shuffle.partitions` | Formal A1 rows + best-config table | ✅ **Done** (21 Oct) |
+| **7** | A2 — file compaction | Measure compaction cost (`Copt`) and benefit | A2 rows + compaction cost/benefit table | ✅ **Done** (21 Oct) |
 | **8** | Cost model + break-even | Convert measurements to estimated cost; compute OBEP | `cost_model.py`, `Cost_Model_Assumptions.md`, break-even table | ☐ Not started |
 | **9** | Decision framework | Rule-based {Nothing \| Tune \| Compact}; validate vs static | `decision_framework.py`, validation table | ☐ Not started |
 | **10** | Analysis, figures, hypotheses | Statistics, 7 figures, H1/H2 verdicts | `analysis/analysis.ipynb`, figures | ☐ Not started |
@@ -832,21 +845,21 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 
 ### 17.2 Remaining phases in detail
 
-#### Phase 6 — A1 formal run *(finish)*
-- [ ] Reboot; free RAM ≥ 3.5 GB; AC power; apps closed.
-- [ ] Archive v1 results (two CSV renames — §20).
-- [ ] `python src/verify_workloads.py` → `GATE PASSED` (re-run on a clean boot).
-- [ ] `python src/run_a1_experiments.py --partitions 1 2 4 8 16 50 200 400` (log the console to a file).
-- [ ] Review per-cell CV/IQR; investigate any `[NOISY]` cell *before* trusting it; re-run if a documented external event caused it.
-- [ ] Commit results; tag the repository (`a1-formal-v2`).
+#### Phase 6 — A1 formal run ✅ *(done 21 Oct 2026)*
+- [x] Pre-flight: free RAM ≥ 3.5 GB; AC power; apps closed.
+- [x] Archive v1 results.
+- [x] `python src/verify_workloads.py` → `GATE PASSED`.
+- [x] `python src/run_a1_experiments.py --partitions 1 2 4 8 16 50 200 400` (log: `logs/a1_formal.log`).
+- [x] Review per-cell CV/IQR: 5 of 32 cells noisy (single outliers); kept and disclosed; sensitivity check shows no conclusion changes (research log F-A1-6).
+- [x] Commit results; tag the repository (`a1-formal-v2`).
 - **Deliverable:** populated A1 rows in `experiment_results.csv` + `a1_best_config_per_workload.csv`.
 
-#### Phase 7 — A2 compaction
-- [ ] Build `compaction.py` (read fragmented orders → write to a new path with target file count; `Copt` measurable).
-- [ ] Build `run_a2_experiments.py` (before → compaction → after, randomized blocks, **no caching**, per-run warm-up, session warm-up).
-- [ ] **A2 pilot** (E4): check the high-fragmentation benefit is above noise; if not, add an extreme level (e.g. 500 files).
-- [ ] Formal A2: 6 workloads × 5 blocks × 3 measurements = 90 measured executions.
-- **Deliverable:** A2 rows + compaction cost/benefit table.
+#### Phase 7 — A2 compaction ✅ *(done 21 Oct 2026)*
+- [x] Build `compaction.py` (read fragmented orders → write to a new path with target file count; `Copt` measurable).
+- [x] Build `run_a2_experiments.py` (before → compaction → after, randomized blocks, **no caching**, per-run warm-up, session warm-up).
+- [x] **A2 pilot** (E4): gate passed — no extreme level needed.
+- [x] Formal A2: 6 workloads × 5 blocks × 3 measurements = 90 measured executions (tag `a2-formal-v2`).
+- **Deliverable:** A2 rows + compaction cost/benefit table (`results/processed/a2_compaction_summary.csv`).
 
 #### Phase 8 — Cost model + break-even
 - [ ] Write `Cost_Model_Assumptions.md`: cite the **current official** pricing page(s) (e.g. EC2/Glue) with access date; state the proxies P1/P2; state "estimated, not billed".
@@ -879,13 +892,13 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 | # | Deliverable | Status |
 |---|---|---|
 | 1 | Research paper (submission-ready, IEEE format) | ☐ |
-| 2 | Experimental framework (Python + PySpark) | ◐ (A1 side done; A2/cost/decision pending) |
+| 2 | Experimental framework (Python + PySpark) | ◐ (A1 + A2 done; cost model / decision framework pending) |
 | 3 | Workload generator (seeded, reproducible) | ✅ |
-| 4 | `experiment_results.csv` (raw measurements, every run) | ◐ (pilot only; formal pending) |
+| 4 | `experiment_results.csv` (raw measurements, every run) | ✅ (formal A1 + A2; validation runs to come) |
 | 5 | Cost model (published pricing + measured usage, documented assumptions) | ☐ |
 | 6 | Decision framework (rule-based Nothing / Tune / Compact) | ☐ |
 | 7 | Results (7 figures, break-even curves, H1/H2 verdicts) | ☐ |
-| 8 | Reproducibility package (code + configs + instructions) | ◐ (repo exists; needs final tagging and README) |
+| 8 | Reproducibility package (code + configs + instructions) | ◐ (README + tags done; push to GitHub pending) |
 
 ---
 
@@ -893,11 +906,11 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 
 | Category | Count | Phases |
 |---|---:|---|
-| ✅ **Completed** | **6** | 0, 1, 2, 3, 4, 5 |
-| ◐ **In progress** | **1** | 6 |
-| ☐ **Not started** | **5** | 7, 8, 9, 10, 11 |
+| ✅ **Completed** | **8** | 0, 1, 2, 3, 4, 5, 6, 7 |
+| ◐ **In progress** | **0** | — |
+| ☐ **Not started** | **4** | 8, 9, 10, 11 |
 | **Total** | **12** | |
-| **Remaining (including the one in progress)** | **6** | 6, 7, 8, 9, 10, 11 |
+| **Remaining** | **4** | 8, 9, 10, 11 |
 
 ```
 Phase  0 Research prep         ████████████ 100 %  ✅
@@ -906,15 +919,15 @@ Phase  2 Environment           ████████████ 100 %  ✅
 Phase  3 Baseline pipeline     ████████████ 100 %  ✅ (v2)
 Phase  4 Workload generator    ████████████ 100 %  ✅
 Phase  5 Instrumentation       ████████████ 100 %  ✅
-Phase  6 A1 experiments        ███████░░░░░  ~60 %  ◐  (estimate)
-Phase  7 A2 compaction         ░░░░░░░░░░░░   0 %
+Phase  6 A1 experiments        ████████████ 100 %  ✅ (21 Oct)
+Phase  7 A2 compaction         ████████████ 100 %  ✅ (21 Oct)
 Phase  8 Cost model            ░░░░░░░░░░░░   0 %
 Phase  9 Decision framework    ░░░░░░░░░░░░   0 %
 Phase 10 Analysis & figures    ░░░░░░░░░░░░   0 %
 Phase 11 Paper & submission    ░░░░░░░░░░░░   0 %
 ```
 
-> **Reading the numbers.** By *count* the project is 50 % through its phases, but the remaining phases (A2, cost model, framework, analysis, paper) carry most of the intellectual and writing effort. Do not equate "6 of 12" with "half the work".
+> **Reading the numbers.** By *count* the project is two-thirds through its phases, but the remaining phases (cost model, framework, analysis, paper) carry most of the intellectual and writing effort.
 
 ---
 
@@ -926,8 +939,8 @@ Phase 11 Paper & submission    ░░░░░░░░░░░░   0 %
 |---|---|---|
 | 1 | Environment + baseline pipeline (P2–3) | ✅ Done 29–30 Aug (ahead of plan) |
 | 2 | Workload generator + instrumentation + pilot (P4–5) | ✅ P4 on 30 Aug; P5 verified 12 Sep |
-| 3 | A1 experiments (P6) | ◐ Pilot 11 Oct → redesign; sweep 16 Oct; **formal run pending** |
-| 4 | A2 (P7) | ☐ |
+| 3 | A1 experiments (P6) | ✅ Pilot 11 Oct → redesign; sweep + **formal run 21 Oct** |
+| 4 | A2 (P7) | ✅ Pilot + formal run 21 Oct |
 | 5 | Cost model (P8) | ☐ |
 | 6 | Framework (P9) | ☐ |
 | 7 | Analysis (P10) | ☐ |
@@ -963,30 +976,23 @@ The first two weeks of work were completed quickly; the project then stalled for
 
 ### 20.1 Immediate (next working session)
 
-1. ☐ **Reboot** the laptop; open only PowerShell; plug into AC; set the best-performance power mode.
-2. ☐ Check free RAM: `python -c "import psutil; print(psutil.virtual_memory().available/2**30)"` → want **≥ 3.5**. *(If it stays below, tell the assistant — fallback is a 2 g driver heap and a lower threshold.)*
-3. ☐ **Archive the v1 pilot results** (the schema changed, so appending is refused):
-   - `results/raw/experiment_results.csv` → `results/raw/pilot_a1_v1_results.csv`
-   - `results/processed/a1_best_config_per_workload.csv` → `results/processed/pilot_a1_v1_best_config.csv`
-4. ☐ Hand-edit `environment.md`: driver memory `3g`; add `spark.sql.autoBroadcastJoinThreshold = -1`; confirm the disk type.
-5. ☐ `python src/verify_workloads.py` → expect `GATE PASSED` (without `--force`).
-6. ☐ **Formal A1 run**, logging the console:
-   `mkdir logs` (once), then `python src/run_a1_experiments.py --partitions 1 2 4 8 16 50 200 400 2>&1 | Tee-Object logs\a1_formal.log`
-7. ☐ Send the final summary block to the assistant for analysis.
-8. ☐ Commit and tag in GitHub (`a1-formal-v2`); commit the raw and processed CSVs and the log.
+*Steps 1–8 of the 20 Oct list (reboot, RAM check, archive v1, environment, gate, formal A1, commit/tag) and the A2 build and runs were completed on 21 Oct 2026.*
+
+1. ☐ Choose the cloud **pricing basis** (EC2 vCPU-hour / Glue DPU / Databricks DBU) and the cost proxy.
+2. ☐ Phase 8: `Cost_Model_Assumptions.md` + `cost_model.py`; break-even table and sensitivity.
+3. ☐ Push commits and tags to GitHub (needs the personal-account login on this laptop).
 
 ### 20.2 Then
 
-9. ☐ Build and pilot **A2** (`compaction.py`, `run_a2_experiments.py`).
-10. ☐ Phase 8 → 9 → 10 → 11 as in §17.2.
+4. ☐ Phase 9 → 10 → 11 as in §17.2; draft paper §§ I–V in parallel (`paper/`, IEEEtran LaTeX).
 
 ### 20.3 Housekeeping
 
-- ☐ Fix `Literature_Matrix.xlsx` metadata (Micky, PARIS, Smartpick, cross-layer paper).
+- ☑ Fix `Literature_Matrix.xlsx` metadata (Micky, PARIS, Smartpick, cross-layer paper) — done 22 Oct 2026.
 - ☐ Retire the stale checkboxes in `Final_Execution_Plan.md` — this document is the live status.
 - ☐ Decide the **target venue and deadline**; confirm expectations with the guide (cloud validation? page limit?).
-- ☐ Write the repository `README.md` (run order, requirements, expected outputs).
-- ☐ Keep the 10 generated workloads reproducible: only the **seed and the scripts** need to be committed, not the Parquet data.
+- ☑ Write the repository `README.md` (run order, requirements, expected outputs) — done 20–21 Oct 2026.
+- ☑ Keep the 10 generated workloads reproducible: only the **seed and the scripts** are committed, not the Parquet data (`data/` is git-ignored).
 
 ---
 
@@ -1557,6 +1563,18 @@ python src/run_a1_experiments.py --partitions 1 2 4 8 16 50 200 400
 [23] N. J. Yadwadkar, B. Hariharan, J. E. Gonzalez, B. Smith, and R. H. Katz, "Selecting the best VM across multiple public clouds: A data-driven performance modeling approach," in *Proc. 2017 Symp. Cloud Computing (SoCC '17)*, Santa Clara, CA, USA, 2017, pp. 452–465, doi: 10.1145/3127479.3131614.
 
 [24] A. Das Mohapatra and K. Oh, "Smartpick: Workload prediction for serverless-enabled scalable data analytics systems," in *Proc. 24th ACM/IFIP Int. Middleware Conf. (Middleware '23)*, 2023, doi: 10.1145/3590140.3592850.
+
+*Added 22 Oct 2026; metadata verified against Crossref.*
+
+[25] S. Nakandala *et al.*, "AutoLiquid: Autonomic data layout optimization for the Databricks lakehouse," *Proc. VLDB Endow.*, vol. 19, no. 12, pp. 4023–4035, 2026, doi: 10.14778/3827998.3828013.
+
+[26] G. Liu, A. Kipf, and R. Borovica-Gajic, "LayoutPilot: A lakehouse physical design advisor," *Proc. VLDB Endow.*, vol. 19, no. 12, pp. 4578–4581, 2026, doi: 10.14778/3827998.3828070.
+
+[27] V. Venkatesan, "AutoCompactionAI: A reinforcement learning framework for adaptive file compaction in serverless data lakes," in *Proc. 2025 IEEE Int. Conf. Future Machine Learning and Data Science (FMLDS)*, 2025, pp. 566–571, doi: 10.1109/FMLDS67896.2025.00081.
+
+[28] H. Chettaoui and F. Hkiri, "Correlation aware solution for merging small files based on similarity and clustering in HDFS," *J. Supercomput.*, vol. 81, no. 15, Art. 1458, 2025, doi: 10.1007/s11227-025-07946-9.
+
+[29] J. Camacho-Rodríguez *et al.*, "LST-Bench: Benchmarking log-structured tables in the cloud," *Proc. ACM Manag. Data*, vol. 2, no. 1, pp. 1–26, 2024, doi: 10.1145/3639314.
 
 *Software cited in the methodology (add to the paper's reference list when used):* Apache Spark documentation ("Performance Tuning — Spark SQL"), sparkMeasure (L. Canali, CERN) — add the exact URL and access date.
 

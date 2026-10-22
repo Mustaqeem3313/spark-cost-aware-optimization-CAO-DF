@@ -1,0 +1,53 @@
+﻿#,Phase,Area,Task,Status,Notes
+1,0,Research preparation,"Technical understanding (Spark, shuffle, Parquet, cost, break-even)",Done,Phase0_Technical_Understanding.md
+2,1,Literature review,20-30 papers across six themes; gap identified,Done,Literature_Review_Shaikh.docx
+3,1,Literature review,Literature matrix,Done,Literature_Matrix.xlsx
+4,1,Literature review,"Fix matrix metadata (Micky, PARIS, Smartpick, cross-layer paper)",Done,"Rows [20],[22]-[24] aligned with Appendix A (22 Oct)"
+5,1,Literature review,Optional: add 3-5 recent (2025-26) compaction/layout papers,Done,Added [25]-[29]; DOIs verified on Crossref
+6,1,Literature review,"Read abstracts of [27],[28]; add [25]-[29] to review .docx",Pending,Before citing in paper
+7,2,Environment,"Study machine set up (Python 3.11.9, JDK 17, winutils, venv)",Done,"i5-1335U, 15.7 GB"
+8,2,Environment,environment.md regenerated for study machine,Done,environment.md
+9,2,Environment,verify_phase2_setup.py passes,Done,ENVIRONMENT READY
+10,3,Baseline pipeline,"Pipeline v2 (filter-join-groupBy, 2 Exchanges) frozen",Done,src/baseline_pipeline.py
+11,4,Workload generator,"10 seeded workloads generated (A1 x4, A2 x6)",Done,workload_index.csv
+12,4,Workload generator,Shuffle-scaling gate (E1) passed,Done,27.6x / 38.1x / 3.9x / 5.5x
+13,5,Instrumentation,"Harness: sparkMeasure, timer, CPU/RAM sampler, pre-flight",Done,src/instrumentation.py
+14,5,Instrumentation,Smoke test passed,Done,smoke_test_results.csv
+15,-,Codebase,"Refactor: docstrings, paths.py, shared runner, bug fixes, ruff clean",Done,commit 677663d
+16,-,Codebase,"README, .gitignore, pyproject, requirements-dev",Done,commit 677663d
+17,6,A1 shuffle tuning,E2 exploratory sweep (9 settings x 3 blocks),Done,pilot_a1_v2_sweep.csv
+18,6,A1 shuffle tuning,E3 formal A1: 160 measured runs,Done,tag a1-formal-v2
+19,6,A1 shuffle tuning,Review CV/IQR of noisy cells (5/32),Done,Single outliers; disclosed
+20,6,A1 shuffle tuning,Outlier sensitivity check (robustness_check.py),Done,Rank corr >= 0.976; large_low optimum is a 1-4 plateau
+21,6,A1 shuffle tuning,Confirm: keep noisy cells without rerun,Done,Keep + disclose; sensitivity check: no conclusion changes (F-A1-6)
+22,7,A2 compaction,Build compaction.py (coalesce to ceil(size/128MB)),Done,Self-test passed
+23,7,A2 compaction,"Build run_a2_experiments.py (before/Copt/after, no cache)",Done,src/run_a2_experiments.py
+24,7,A2 compaction,E4 A2 pilot: gate PASSED,Done,pilot_a2.csv
+25,7,A2 compaction,E5 formal A2: 90 measured runs,Done,tag a2-formal-v2
+26,-,Documentation,"Research log (findings, limitations L1-L9, decisions)",Done,docs/research_log.md
+27,-,Documentation,Update master document status (Phases 6-7),Done,"Dashboard, phases, timeline, next steps updated (22 Oct)"
+28,-,Repository,Push commits + tags to personal GitHub,Blocked,Log in as personal account (403 on Clickflow account)
+29,-,Repository,Choose licence,Pending,Your decision
+30,8,Cost model,Choose pricing basis (EC2 vCPU-hr / Glue DPU / Databricks DBU),Pending,Your decision
+31,8,Cost model,"Cost_Model_Assumptions.md (official pricing, access date, proxies)",Pending,
+32,8,Cost model,Define Copt for A1 (search vs rule) and A2 (compaction job),Pending,
+33,8,Cost model,"cost_model.py: Crun, Copt, TC(a,N), N*",Pending,
+34,8,Cost model,"Break-even table, N in {1,5,10,50}; sensitivity +/-50% and both proxies",Pending,
+35,9,Decision framework,"decision_framework.py: rule-based decide(w, N) with noise-floor threshold",Pending,
+36,9,Decision framework,"Generate unseen validation workloads (new seeds, medium volume)",Pending,
+37,9,Decision framework,Validate: Static vs Framework total estimated cost,Pending,E6
+38,10,Analysis,"Descriptive stats, effect sizes, bootstrap CIs",Pending,
+39,10,Analysis,7 figures (F1-F7) + tables T1-T4,Pending,
+40,10,Analysis,H1 / H2 verdicts,Pending,
+41,11,Paper,Choose venue / format (IEEE conference template),Pending,Your decision
+42,11,Paper,Draft I Introduction,Pending,Can start now
+43,11,Paper,Draft II Background / Related Work,Pending,Can start now
+44,11,Paper,Draft III Problem definition and cost model,Pending,Can start now
+45,11,Paper,Draft IV Decision framework (OBEP),Pending,Can start now
+46,11,Paper,Draft V Experimental methodology,Pending,Can start now
+47,11,Paper,"Draft VI Results (A1, A2, break-even, validation)",Pending,After Phases 8-10
+48,11,Paper,Draft VII Discussion + Threats to validity,Pending,Partly from research log
+49,11,Paper,Draft VIII Conclusion + Abstract,Pending,Last
+50,11,Paper,"Reference verification, similarity check, AI-use disclosure",Pending,
+51,11,Paper,Guide review + revision,Pending,
+52,11,Paper,Reproducibility package + final tag; submit by 15 Nov,Pending,Deadline 15 Nov 2026

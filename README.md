@@ -63,6 +63,7 @@ Before any timed step: connect AC power, select the best-performance power mode 
 | 6. Formal A1 matrix | `python src\run_a1_experiments.py 2>&1 \| Tee-Object logs\a1_formal.log` | `results/raw/experiment_results.csv`, `results/processed/a1_*.csv` |
 | 7. A2 pilot (gate) | `python src\run_a2_experiments.py --pilot` | `results/raw/pilot_a2.csv`, `results/processed/pilot_a2_*.csv` |
 | 8. Formal A2 matrix | `python src\run_a2_experiments.py 2>&1 \| Tee-Object logs\a2_formal.log` | `results/raw/experiment_results.csv`, `results/processed/a2_*.csv` |
+| A1 outlier sensitivity (no Spark) | `python src\robustness_check.py` | `results/processed/a1_outlier_robustness.csv` |
 
 Workload data is deterministic (NumPy seed 42) and is not committed; step 3 recreates it exactly.
 
@@ -88,6 +89,7 @@ src/
   run_a1_experiments.py       formal A1 matrix
   compaction.py               A2 action: rewrite fragmented Parquet into target-sized files
   run_a2_experiments.py       A2 pilot and formal matrix (fragmented -> compaction -> compacted)
+  robustness_check.py         A1 sensitivity: do conclusions change if noisy-cell outliers are dropped?
   environment_report.py       generates environment.md
 docs/research_log.md          dated record of runs, findings, limitations and decisions
 experiments/configs/          workload index

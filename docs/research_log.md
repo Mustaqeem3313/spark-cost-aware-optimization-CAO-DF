@@ -88,8 +88,24 @@ Median wall-clock (s), 5 blocks:
 
 5 of 32 cells exceed CV 0.20, all at 1–2 partitions, each caused by one slow block
 (e.g. large_high p=1: 2.53, 1.21, 1.13, 1.24, 2.32 s). Sub-second medians; likely hybrid
-P-core/E-core scheduling by Windows. Medians and rankings unaffected. Reported as is
-(outliers disclosed, never dropped).
+P-core/E-core scheduling by Windows. Reported as is (outliers disclosed, never dropped).
+
+**Robustness check (`src/robustness_check.py` → `results/processed/a1_outlier_robustness.csv`).**
+Dropping the slowest run in each noisy cell (sensitivity analysis only — headline numbers keep
+all runs):
+
+| Workload | Best (all runs) | Best (trimmed) | Speed-up all → trimmed | Rank corr. |
+|---|---|---|---|---|
+| large_high | 4 | 4 | 7.95× → 7.95× | 0.976 |
+| large_low | 4 | 2 | 8.47× → 8.64× | 0.976 |
+| small_high | 1 | 1 | 11.31× (no noisy cells) | 1.000 |
+| small_low | 2 | 2 | 10.66× → 10.74× | 1.000 |
+
+- **F-A1-6 — The optimum is a plateau, not a point.** On large_low, 1, 2 and 4 partitions are
+  within 20 ms (medians 0.473 / 0.469 / 0.457 s), so the outlier only decides which member of
+  a tie "wins". Rankings are otherwise unchanged (ρ ≥ 0.976) and every speed-up stays ≥ 7.9×.
+  Paper: report the optimum as the best setting *and* the set of settings within the noise
+  floor; the decision framework must treat differences below the noise floor as ties.
 
 ---
 
@@ -173,7 +189,7 @@ an effect are 5/5 consistent.
 |---|---|---|---|
 | L1 | Single local machine (`local[*]`), not a cluster; no network shuffle | External validity | State explicitly; relative effects and break-even logic transfer, absolute times do not |
 | L2 | Windows/NTFS file-creation cost amplifies bypass-merge-writer overhead | A1 magnitude, A2 mechanism | Report mechanism; expect smaller (not reversed) effect on Linux/HDFS/S3 |
-| L3 | Hybrid P/E-core scheduling → sporadic slow runs at 1–2 partitions | A1 noise (5 cells) | Medians, IQR, randomized blocks, outliers disclosed |
+| L3 | Hybrid P/E-core scheduling → sporadic slow runs at 1–2 partitions | A1 noise (5 cells) | Medians, IQR, randomized blocks, outliers disclosed; trimmed sensitivity check (F-A1-6) leaves conclusions unchanged |
 | L4 | Small datasets (≤ 28 MB on disk, ≤ 35 MB shuffled) | Generality | Optimum partition count will grow with data; framework uses measured/estimated costs, not fixed values |
 | L5 | OS file cache warm in A2 (warm-up runs) | A2 read-side cost | Acknowledged in design (§13.3); compaction benefit is a lower bound on cold reads |
 | L6 | A2 benefit partly mediated by 200 shuffle partitions (F-A2-2) | A2 interpretation | Report as interaction; no joint arm by design (D3) → future work |
@@ -188,7 +204,8 @@ an effect are 5/5 consistent.
 | Date | Decision | Rationale |
 |---|---|---|
 | 2026-10-20 | Formal A1 grid {1, 2, 4, 8, 16, 50, 200, 400} | Span under-parallel → default → over-partitioned |
-| 2026-10-21 | Keep the 5 noisy A1 cells; do not rerun *(proposed — awaiting confirmation)* | Single-run outliers, medians robust; protocol says disclose, not drop |
+| 2026-10-22 | Keep the 5 noisy A1 cells; do not rerun *(recommended; final say with the author)* | Single-run outliers; trimmed sensitivity check changes no conclusion (F-A1-6); protocol says disclose, not drop |
+| 2026-10-22 | Literature matrix: fix [20], [22]–[24]; add [25]–[29] | Metadata aligned with verified Appendix A; DOIs checked on Crossref |
 | 2026-10-21 | A2 shuffle partitions held at 200 | Static baseline; keeps A2 separate from A1 (D3) |
 | 2026-10-21 | Compaction via `coalesce`, not `repartition` | Matches bin-pack compaction (no full shuffle) → realistic `Copt` |
 | 2026-10-21 | No extra 500-file level | Pilot gate passed; master plan says add only if it fails |

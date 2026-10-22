@@ -1,0 +1,5 @@
+workload_id,noisy_cells,best_partitions_full,best_partitions_trimmed,speedup_full,speedup_trimmed,spearman_rank_corr,max_cv_full,max_cv_trimmed
+A1_large_high,2,4,4,7.948,7.948,0.9762,0.404,0.385
+A1_large_low,2,4,2,8.47,8.641,0.9762,0.333,0.186
+A1_small_high,0,1,1,11.314,11.314,1.0,0.192,0.192
+A1_small_low,1,2,2,10.661,10.742,1.0,0.231,0.179
