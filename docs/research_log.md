@@ -217,3 +217,5 @@ an effect are 5/5 consistent.
 - Cost proxy: wall-clock × cores vs executor time (F-A1-4 shows they disagree on the A1 optimum).
 - A1 `Copt` definition: search (sum of sweep runtimes) vs rule-based (≈ 0).
 - Licence; co-authorship of the guide.
+
+- **2026-10-22 — Pricing basis:** AWS EC2 on-demand vCPU-hour chosen by the author (simplest, most transparent; Glue/DBU may appear only as discussion).
