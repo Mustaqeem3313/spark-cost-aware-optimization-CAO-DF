@@ -219,3 +219,4 @@ an effect are 5/5 consistent.
 - Licence; co-authorship of the guide.
 
 - **2026-10-22 — Pricing basis:** AWS EC2 on-demand vCPU-hour chosen by the author (simplest, most transparent; Glue/DBU may appear only as discussion).
+- **2026-10-23 — A1 Copt definition:** primary = search-based (one measured run of each candidate shuffle-partition setting, i.e. the cost of discovering the optimum); sensitivity = rule-based lower bound (Copt ~ 0, N* = 1). Chosen by the author; mirrors A2 where Copt is the measured compaction job.
