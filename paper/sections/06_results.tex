@@ -14,8 +14,69 @@ workload; best setting 7.9--11.3$\times$ faster; optimum 1--4 partitions, growin
 compaction cost 0.18--1.29\,s.}
 
 \subsection{Break-even points}
-\tbd{Phase 8: $\Nstar$ per workload and action, both proxies, search-based and rule-based A1
-cost; total-cost curves for $N \in \{1, 5, 10, 50\}$; price sensitivity.}
+Table~\ref{tab:breakeven} gives the per-execution saving, the one-time cost relative to one
+static execution, and the break-even point of every action under both proxies.
+Fig.~\ref{fig:tc} shows the corresponding total-cost lines.
+
+\begin{table}[t]
+\caption{Estimated saving per execution and break-even point $\Nstar$}
+\label{tab:breakeven}
+\centering
+\footnotesize
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+& & \multicolumn{2}{c}{\textbf{Saving (\%)}} & & \multicolumn{2}{c}{$\boldsymbol{\Nstar}$} \\
+\cmidrule(lr){3-4}\cmidrule(l){6-7}
+\textbf{Workload} & \textbf{Action} & P1 & P2 & $\Copt/\Cstatic$ & P1 & P2 \\
+\midrule
+large\_high  & A1 & 87.4 & 95.9 & 2.44 & 3 & 3 \\
+large\_low   & A1 & 88.2 & 97.4 & 2.49 & 3 & 3 \\
+small\_high  & A1 & 91.2 & 98.6 & 2.08 & 3 & 2 \\
+small\_low   & A1 & 90.6 & 98.5 & 2.23 & 3 & 2 \\
+\midrule
+large, 1 file   & A2 & $-0.2$ & 0.9   & 0.20 & $\infty$ & 11$^{\dagger}$ \\
+large, 10 files & A2 & 23.0   & 85.1  & 0.20 & 1 & 1 \\
+large, 50 files & A2 & 34.2   & 85.9  & 0.18 & 1 & 1 \\
+small, 1 file   & A2 & $-6.5$ & $-6.6$ & 0.12 & $\infty$ & $\infty$ \\
+small, 10 files & A2 & 65.1   & 88.4  & 0.06 & 1 & 1 \\
+small, 50 files & A2 & 67.4   & 87.4  & 0.09 & 1 & 1 \\
+\bottomrule
+\multicolumn{7}{@{}p{0.95\columnwidth}@{}}{\scriptsize A1 with search-based $\Copt$; with
+rule-based $\Copt = 0$, $\Nstar = 1$ for every A1 workload. $\Copt/\Cstatic$ under P1.
+Savings are differences of cell medians. $^{\dagger}$Saving smaller than the interquartile
+range of the static cost, i.e.\ within measurement noise.}
+\end{tabular}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/total_cost_curves_p1.pdf}
+\caption{Estimated total cost $TC(a,N)$ under proxy P1 for every workload; dots mark $\Nstar$.}
+\label{fig:tc}
+\end{figure*}
+
+\textbf{A1.} Searching the eight candidate settings costs 2.1--2.5 static executions under P1
+(1.8--2.2 under P2), while the chosen setting saves 87--99\,\% of every subsequent execution.
+The search therefore pays for itself after two or three executions on every workload, and
+after a single execution if the setting is known without a search. At $N = 50$ the searched
+setting lowers the estimated total cost by 82.5--87.0\,\% under P1 and 91.9--95.1\,\% under P2.
+
+\textbf{A2.} Compaction costs between 6\,\% and 20\,\% of one execution on fragmented data
+under P1, and less than 2\,\% under P2, so it pays for itself at the first execution whenever
+the input is fragmented. For single-file inputs it never pays off. The only finite break-even
+point among them, $\Nstar = 11$ for the large single-file workload under P2, comes from a
+saving of 0.9\,\% that lies inside the run-to-run variation, and is an artefact a decision rule
+must not act on (Section~\ref{sec:framework}).
+
+\textbf{Price and proxy.} Scaling the price by 0.5 or 1.5 leaves every $\Nstar$ and every
+decision unchanged, as expected when $\Copt$ and $\Crun$ use the same proxy; only the absolute
+savings scale. The two proxies give the same $\Nstar$ for 11 of the 14 workload--action pairs
+and, once savings within noise are discarded, agree on whether to act for every workload at
+every $N \in \{1, 5, 10, 50\}$. They differ in two respects. First, P2 always selects a single shuffle partition for A1,
+whereas P1 selects 1--4, because extra partitions shorten wall-clock time but add task
+overhead. Second, P2 attributes a much larger relative saving to compaction (85--88\,\% versus
+23--67\,\%): fragmented input multiplies the task-seconds spent by the executors, which P2
+charges in full, while much of that work runs in parallel and so adds less to wall-clock time.
 
 \subsection{Framework validation}
 \tbd{Phase 9: decisions on unseen workloads, cost versus static baseline; verdicts for H1--H3.}

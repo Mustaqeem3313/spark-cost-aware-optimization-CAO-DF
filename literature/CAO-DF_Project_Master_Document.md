@@ -75,15 +75,15 @@ Optimizing a Spark pipeline is not free: tuning shuffle partitions or compacting
 
 > *"I'm not making Spark faster. I'm researching whether making it faster — or compacting its data — is worth the cost for a given workload."*
 
-### 1.4 Status dashboard (22 Oct 2026)
+### 1.4 Status dashboard (23 Oct 2026)
 
 | Metric | Value |
 |---|---|
 | Total phases | **12** (Phase 0 – Phase 11) |
-| Completed | **8** (Phases 0 – 7) |
-| In progress | **0** — Phase 8 (cost model) is next |
-| Not started | **4** (Phases 8, 9, 10, 11) |
-| Overall progress | `████████░░░░` **8 / 12 complete (67 %)** |
+| Completed | **9** (Phases 0 – 8) |
+| In progress | **0** — Phase 9 (decision framework) is next; paper §§ I–V, VIII drafted |
+| Not started | **3** (Phases 9, 10, 11) |
+| Overall progress | `█████████░░░` **9 / 12 complete (75 %)** |
 | Experimental data collected | **Formal A1** (E3, 160 runs, tag `a1-formal-v2`) · **Formal A2** (E5, 90 runs, tag `a2-formal-v2`) · A2 pilot (E4, 54 runs) |
 | Schedule | Re-baselined in §19.2; college deadline **15 Nov 2026** |
 
@@ -639,7 +639,7 @@ spark-cost-aware-optimization/
 ├── README.md
 ├── requirements.txt              # pinned versions
 ├── environment.md                # hardware/software record (hand-confirm the disk type)
-├── Cost_Model_Assumptions.md     # (Phase 8)
+├── Cost_Model_Assumptions.md     # ✅ (Phase 8)
 ├── src/
 │   ├── __init__.py
 │   ├── spark_config.py           ✅ session builder + fixed settings + read-back
@@ -654,7 +654,7 @@ spark-cost-aware-optimization/
 │   ├── compaction.py             ✅ A2 action (coalesce to ceil(size / 128 MB))
 │   ├── run_a2_experiments.py     ✅ A2 pilot + formal runner (E4, E5 done)
 │   ├── robustness_check.py       ✅ A1 outlier sensitivity check
-│   ├── cost_model.py             ☐ (Phase 8)
+│   ├── cost_model.py             ✅ Phase 8 cost model and break-even
 │   └── decision_framework.py     ☐ (Phase 9)
 ├── experiments/configs/workload_index.csv     # written by the generator
 ├── data/{raw,generated}/                       # generated Parquet (git-ignored)
@@ -838,7 +838,7 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 | — | **Pilot gate** | Check effects exceed noise before scaling | Pre-registered criterion (§13.4) | ✅ A1 and A2 passed |
 | **6** | A1 — shuffle/partition tuning | Measure cost-performance of `spark.sql.shuffle.partitions` | Formal A1 rows + best-config table | ✅ **Done** (21 Oct) |
 | **7** | A2 — file compaction | Measure compaction cost (`Copt`) and benefit | A2 rows + compaction cost/benefit table | ✅ **Done** (21 Oct) |
-| **8** | Cost model + break-even | Convert measurements to estimated cost; compute OBEP | `cost_model.py`, `Cost_Model_Assumptions.md`, break-even table | ☐ Not started |
+| **8** | Cost model + break-even | Convert measurements to estimated cost; compute OBEP | `cost_model.py`, `Cost_Model_Assumptions.md`, break-even table | ✅ Done (23 Oct) |
 | **9** | Decision framework | Rule-based {Nothing \| Tune \| Compact}; validate vs static | `decision_framework.py`, validation table | ☐ Not started |
 | **10** | Analysis, figures, hypotheses | Statistics, 7 figures, H1/H2 verdicts | `analysis/analysis.ipynb`, figures | ☐ Not started |
 | **11** | Paper, revision, submission | IEEE paper + reproducibility package | Submission-ready paper | ☐ Not started |
@@ -862,10 +862,10 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 - **Deliverable:** A2 rows + compaction cost/benefit table (`results/processed/a2_compaction_summary.csv`).
 
 #### Phase 8 — Cost model + break-even
-- [ ] Write `Cost_Model_Assumptions.md`: cite the **current official** pricing page(s) (e.g. EC2/Glue) with access date; state the proxies P1/P2; state "estimated, not billed".
-- [ ] Implement `cost_model.py`: `Crun`, `Copt`, `TC(a, N)`, `N*`.
-- [ ] Define `Copt` for A1 (search vs rule — §12.3) and for A2 (compaction job).
-- [ ] Break-even table per workload and N ∈ {1, 5, 10, 50}; curves; **sensitivity** (price ±50 %, both proxies).
+- [x] Write `Cost_Model_Assumptions.md`: cite the **current official** pricing page(s) (e.g. EC2/Glue) with access date; state the proxies P1/P2; state "estimated, not billed".
+- [x] Implement `cost_model.py`: `Crun`, `Copt`, `TC(a, N)`, `N*`.
+- [x] Define `Copt` for A1 (search vs rule — §12.3) and for A2 (compaction job).
+- [x] Break-even table per workload and N ∈ {1, 5, 10, 50}; curves; **sensitivity** (price ±50 %, both proxies).
 - **Deliverable:** `cost_model.py`, assumptions file, break-even table.
 
 #### Phase 9 — Decision framework (build + validate)
@@ -978,8 +978,8 @@ The first two weeks of work were completed quickly; the project then stalled for
 
 *Steps 1–8 of the 20 Oct list (reboot, RAM check, archive v1, environment, gate, formal A1, commit/tag) and the A2 build and runs were completed on 21 Oct 2026.*
 
-1. ☐ Choose the cloud **pricing basis** (EC2 vCPU-hour / Glue DPU / Databricks DBU) and the cost proxy.
-2. ☐ Phase 8: `Cost_Model_Assumptions.md` + `cost_model.py`; break-even table and sensitivity.
+1. ✅ Choose the cloud **pricing basis** (EC2 vCPU-hour / Glue DPU / Databricks DBU) and the cost proxy.
+2. ✅ Phase 8: `Cost_Model_Assumptions.md` + `cost_model.py`; break-even table and sensitivity.
 3. ☐ Push commits and tags to GitHub (needs the personal-account login on this laptop).
 
 ### 20.2 Then

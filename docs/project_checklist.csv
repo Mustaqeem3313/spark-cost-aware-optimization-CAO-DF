@@ -28,26 +28,26 @@
 27,-,Documentation,Update master document status (Phases 6-7),Done,"Dashboard, phases, timeline, next steps updated (22 Oct)"
 28,-,Repository,Push commits + tags to personal GitHub,Blocked,Log in as personal account (403 on Clickflow account)
 29,-,Repository,Choose licence,Pending,Your decision
-30,8,Cost model,Choose pricing basis (EC2 vCPU-hr / Glue DPU / Databricks DBU),Pending,Your decision
-31,8,Cost model,"Cost_Model_Assumptions.md (official pricing, access date, proxies)",Pending,
-32,8,Cost model,Define Copt for A1 (search vs rule) and A2 (compaction job),Pending,
-33,8,Cost model,"cost_model.py: Crun, Copt, TC(a,N), N*",Pending,
-34,8,Cost model,"Break-even table, N in {1,5,10,50}; sensitivity +/-50% and both proxies",Pending,
+30,8,Cost model,Choose pricing basis (EC2 vCPU-hr / Glue DPU / Databricks DBU),Done,"EC2 on-demand m6i, Mumbai, USD 0.0505/vCPU-h"
+31,8,Cost model,"Cost_Model_Assumptions.md (official pricing, access date, proxies)",Done,Cost_Model_Assumptions.md
+32,8,Cost model,Define Copt for A1 (search vs rule) and A2 (compaction job),Done,A1 search (primary) / rule (sensitivity); A2 measured job
+33,8,Cost model,"cost_model.py: Crun, Copt, TC(a,N), N*",Done,src/cost_model.py
+34,8,Cost model,"Break-even table, N in {1,5,10,50}; sensitivity +/-50% and both proxies",Done,"results/processed/breakeven_table.csv, cost_sensitivity.csv"
 35,9,Decision framework,"decision_framework.py: rule-based decide(w, N) with noise-floor threshold",Pending,
 36,9,Decision framework,"Generate unseen validation workloads (new seeds, medium volume)",Pending,
 37,9,Decision framework,Validate: Static vs Framework total estimated cost,Pending,E6
 38,10,Analysis,"Descriptive stats, effect sizes, bootstrap CIs",Pending,
 39,10,Analysis,7 figures (F1-F7) + tables T1-T4,Pending,
 40,10,Analysis,H1 / H2 verdicts,Pending,
-41,11,Paper,Choose venue / format (IEEE conference template),Pending,Your decision
-42,11,Paper,Draft I Introduction,Pending,Can start now
-43,11,Paper,Draft II Background / Related Work,Pending,Can start now
-44,11,Paper,Draft III Problem definition and cost model,Pending,Can start now
-45,11,Paper,Draft IV Decision framework (OBEP),Pending,Can start now
-46,11,Paper,Draft V Experimental methodology,Pending,Can start now
-47,11,Paper,"Draft VI Results (A1, A2, break-even, validation)",Pending,After Phases 8-10
-48,11,Paper,Draft VII Discussion + Threats to validity,Pending,Partly from research log
+41,11,Paper,Choose venue / format (IEEE conference template),Done,IEEEtran LaTeX (venue TBD)
+42,11,Paper,Draft I Introduction,In progress,Drafted; headline results pending
+43,11,Paper,Draft II Background / Related Work,Done,paper/sections/02_related_work.tex
+44,11,Paper,Draft III Problem definition and cost model,Done,paper/sections/03_problem_cost_model.tex
+45,11,Paper,Draft IV Decision framework (OBEP),In progress,Drafted; noise floor and estimation method in Phase 9
+46,11,Paper,Draft V Experimental methodology,Done,paper/sections/05_methodology.tex
+47,11,Paper,"Draft VI Results (A1, A2, break-even, validation)",In progress,Break-even subsection drafted
+48,11,Paper,Draft VII Discussion + Threats to validity,In progress,Threats drafted; Discussion pending
 49,11,Paper,Draft VIII Conclusion + Abstract,Pending,Last
-50,11,Paper,"Reference verification, similarity check, AI-use disclosure",Pending,
+50,11,Paper,"Reference verification, similarity check, AI-use disclosure",In progress,References verified; similarity check pending; disclosure drafted
 51,11,Paper,Guide review + revision,Pending,
 52,11,Paper,Reproducibility package + final tag; submit by 15 Nov,Pending,Deadline 15 Nov 2026

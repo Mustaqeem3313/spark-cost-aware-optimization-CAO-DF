@@ -119,8 +119,12 @@ pipeline version.
 
 \subsection{Cost estimation and validation}
 Per-execution costs are derived from the measurements with proxies P1 and P2
-(Section~\ref{sec:problem}) at the EC2 on-demand vCPU-hour price \tbd{price, region, instance
-family and access date}. Break-even points are computed for $N \in \{1, 5, 10, 50\}$, and a
+(Section~\ref{sec:problem}) at the EC2 on-demand price of USD 0.0505 per vCPU-hour (m6i
+instances, Linux, Asia Pacific (Mumbai) region, accessed 23 October 2026)
+\cite{aws2026ec2pricing}. Under P1 the study machine is charged as 12 vCPUs, one per task slot;
+the price only converts time into money and does not imply that the laptop performs like an
+m6i instance. Every per-execution cost is the median over the repetitions of its cell.
+Break-even points are computed for $N \in \{1, 5, 10, 50\}$, and a
 sensitivity analysis varies the price by $\pm 50\,\%$ and swaps the proxy. To answer RQ2, the
 framework is applied to \tbd{number} unseen validation workloads, generated with different
 seeds and an intermediate volume of 500\,000 orders, and its total estimated cost is compared

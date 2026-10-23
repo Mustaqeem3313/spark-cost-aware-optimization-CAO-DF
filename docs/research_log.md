@@ -183,6 +183,51 @@ an effect are 5/5 consistent.
 
 ---
 
+## 3b. Cost model and break-even (Phase 8)
+
+`src/cost_model.py`; assumptions in `Cost_Model_Assumptions.md`. Price: EC2 on-demand m6i,
+Linux, Mumbai (ap-south-1), **USD 0.0505 per vCPU-hour** (accessed 23 Oct 2026; AWS publication
+2026-10-22). P1 = wall-clock × 12 vCPUs × p / 3600; P2 = executor run time × p / 3600. Per-run
+values are cell medians. Outputs: `results/processed/cost_per_cell.csv`, `breakeven_table.csv`,
+`cost_sensitivity.csv`; `results/figures/total_cost_curves_{p1,p2}`.
+
+| Workload | Action | Saving P1 | Saving P2 | Copt / Crun_static (P1) | N* P1 | N* P2 |
+|---|---|---|---|---|---|---|
+| A1 large_high | A1 search (4 / 1 partitions) | 87.4 % | 95.9 % | 2.44 | 3 | 3 |
+| A1 large_low | A1 search (4 / 1) | 88.2 % | 97.4 % | 2.49 | 3 | 3 |
+| A1 small_high | A1 search (1 / 1) | 91.2 % | 98.6 % | 2.08 | 3 | 2 |
+| A1 small_low | A1 search (2 / 1) | 90.6 % | 98.5 % | 2.23 | 3 | 2 |
+| A2 large_low (1 file) | A2 | −0.2 % | 0.9 % | 0.20 | ∞ | 11 (noise) |
+| A2 large_medium (10) | A2 | 23.0 % | 85.1 % | 0.20 | 1 | 1 |
+| A2 large_high (50) | A2 | 34.2 % | 85.9 % | 0.18 | 1 | 1 |
+| A2 small_low (1 file) | A2 | −6.5 % | −6.6 % | 0.12 | ∞ | ∞ |
+| A2 small_medium (10) | A2 | 65.1 % | 88.4 % | 0.06 | 1 | 1 |
+| A2 small_high (50) | A2 | 67.4 % | 87.4 % | 0.09 | 1 | 1 |
+
+A1 rule-based (Copt = 0): N* = 1 everywhere.
+
+- **F-CM-1 — Even a full search pays off within three runs.** The 8-setting search costs
+  2.1–2.5 static runs (P1; 1.8–2.2 under P2) and the chosen setting saves 87–99 % per run, so
+  N* = 3 (P1) or 2–3 (P2). At N = 50 total cost falls 82.5–87.0 % (P1) / 91.9–95.1 % (P2).
+- **F-CM-2 — Compaction pays off at the first run on fragmented data.** Copt is 6–20 % of one
+  fragmented run (P1), < 2 % (P2). Single-file inputs: never (N* = ∞) — the only finite value
+  (large_low, P2, N* = 11) is a 0.9 % saving below the static IQR (flagged
+  `saving_exceeds_static_iqr = False`). Confirms the need for the Phase 9 noise floor.
+- **F-CM-3 — N* is price-invariant.** Price × 0.5 / 1.5 changes no N* and no decision
+  (`cost_sensitivity.csv`); absolute savings scale linearly.
+- **F-CM-4 — Proxies agree on N* for 11 of 14 pairs** and, after discarding savings within
+  noise, on whether to act at every N in {1, 5, 10, 50}. They differ in (i) the A1 setting —
+  P2 always picks 1 partition, P1 picks 1–4 (F-A1-4) — and (ii) the size of the A2 saving —
+  P2 85–88 % vs P1 23–67 %, because fragmentation multiplies executor task-seconds (F-A2-2)
+  more than wall-clock time.
+- **Note on A2 numbers.** The cost model uses differences of stage medians; §3 benefit figures
+  use the median of per-block paired differences (e.g. large_high 34.2 % vs 32.3 %;
+  small_low −6.5 % vs −1.7 %). Same sign everywhere; state which is used in each table.
+- **Absolute amounts are tiny** (static run 0.02–0.12 US cents under P1) because the data are
+  laptop-scale; report relative savings and N*.
+
+---
+
 ## 4. Limitations register (for the Threats to Validity section)
 
 | # | Limitation | Affects | Mitigation / wording |
@@ -213,12 +258,13 @@ an effect are 5/5 consistent.
 
 ## 6. Open questions
 
-- Cloud pricing basis for the cost model (EC2 vCPU-hour vs Glue DPU vs Databricks DBU).
+- ~~Cloud pricing basis~~ — resolved 2026-10-22/23 (EC2 m6i, Mumbai).
 - Cost proxy: wall-clock × cores vs executor time (F-A1-4 shows they disagree on the A1 optimum).
-- A1 `Copt` definition: search (sum of sweep runtimes) vs rule-based (≈ 0).
+- ~~A1 `Copt` definition~~ — resolved 2026-10-23 (search primary, rule sensitivity).
 - Licence; co-authorship of the guide.
 
 - **2026-10-22 — Pricing basis:** AWS EC2 on-demand vCPU-hour chosen by the author (simplest, most transparent; Glue/DBU may appear only as discussion).
 - **2026-10-23 — A1 Copt definition:** primary = search-based (one measured run of each candidate shuffle-partition setting, i.e. the cost of discovering the optimum); sensitivity = rule-based lower bound (Copt ~ 0, N* = 1). Chosen by the author; mirrors A2 where Copt is the measured compaction job.
 - **2026-10-23 — Reference verification (paper/references.bib):** every entry checked against Crossref, arXiv or the publisher page. Corrected: [3] LOCAT pp. 674–684 (not 1345–1358); [5] Lyu et al. vol. 17 no. 11 pp. 3565–3579 (not no. 12, –3578); [19] OptEx DOI 10.1109/CCGrid.2016.10 (.111 belongs to an unrelated paper). Added missing DOIs/pages for [1], [4], [6], [8], [9], [15], [22], [24]. [16] (Gilad blog) could not be located and was removed from the paper. Appendix A updated accordingly.
 - **2026-10-23 — Paper draft:** IEEEtran skeleton in `paper/`; Sections I–V and VIII drafted; Results, Discussion and Conclusion are placeholders until Phases 8–10. Compiles cleanly (tested with Tectonic 0.17).
+- **2026-10-23 — Phase 8 complete:** region/instance for pricing = m6i, Asia Pacific (Mumbai), chosen by the author; P1 charges 12 vCPUs (the study machine's task slots). Cost model, assumptions file, break-even table, sensitivity and total-cost figures produced; Results §VI-C drafted.

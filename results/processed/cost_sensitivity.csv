@@ -1,0 +1,85 @@
+price_factor,price_per_vcpu_hour_usd,workload_id,action,proxy,chosen_setting,n_star,net_saving_N10_usd,worthwhile_N10
+0.5,0.02525,A1_large_high,A1_search,P1,4 partitions,3,0.003289006083,True
+0.5,0.02525,A1_large_high,A1_rule,P1,4 partitions,1,0.0045624225,True
+0.5,0.02525,A1_large_high,A1_search,P2,1 partition,3,0.003165508333,True
+0.5,0.02525,A1_large_high,A1_rule,P2,1 partition,1,0.004006754167,True
+0.5,0.02525,A1_large_low,A1_search,P1,4 partitions,3,0.002061797167,True
+0.5,0.02525,A1_large_low,A1_rule,P1,4 partitions,1,0.002872776667,True
+0.5,0.02525,A1_large_low,A1_search,P2,1 partition,3,0.001986901458,True
+0.5,0.02525,A1_large_low,A1_rule,P2,1 partition,1,0.002551372222,True
+0.5,0.02525,A1_small_high,A1_search,P1,1 partition,3,0.001911425,True
+0.5,0.02525,A1_small_high,A1_rule,P1,1 partition,1,0.002475846667,True
+0.5,0.02525,A1_small_high,A1_search,P2,1 partition,2,0.001840696944,True
+0.5,0.02525,A1_small_high,A1_rule,P2,1 partition,1,0.00224283125,True
+0.5,0.02525,A1_small_low,A1_search,P1,2 partitions,3,0.0015536325,True
+0.5,0.02525,A1_small_low,A1_rule,P1,2 partitions,1,0.002060568333,True
+0.5,0.02525,A1_small_low,A1_search,P2,1 partition,2,0.001542431319,True
+0.5,0.02525,A1_small_low,A1_rule,P2,1 partition,1,0.001901605556,True
+0.5,0.02525,A2_large_high,A2,P1,compact to 1 file,1,0.00191513675,True
+0.5,0.02525,A2_large_high,A2,P2,compact to 1 file,1,0.003749084931,True
+0.5,0.02525,A2_large_low,A2,P1,compact to 1 file,inf,-9.6253e-05,False
+0.5,0.02525,A2_large_low,A2,P2,compact to 1 file,11,-3.927777778e-07,False
+0.5,0.02525,A2_large_medium,A2,P1,compact to 1 file,1,0.001132218417,True
+0.5,0.02525,A2_large_medium,A2,P2,compact to 1 file,1,0.003656620833,True
+0.5,0.02525,A2_small_high,A2,P1,compact to 1 file,1,0.001983177083,True
+0.5,0.02525,A2_small_high,A2,P2,compact to 1 file,1,0.00194690125,True
+0.5,0.02525,A2_small_low,A2,P1,compact to 1 file,inf,-7.619608333e-05,False
+0.5,0.02525,A2_small_low,A2,P2,compact to 1 file,inf,-1.653173611e-05,False
+0.5,0.02525,A2_small_medium,A2,P1,compact to 1 file,1,0.00173727575,True
+0.5,0.02525,A2_small_medium,A2,P2,compact to 1 file,1,0.001947399236,True
+1,0.0505,A1_large_high,A1_search,P1,4 partitions,3,0.006578012167,True
+1,0.0505,A1_large_high,A1_rule,P1,4 partitions,1,0.009124845,True
+1,0.0505,A1_large_high,A1_search,P2,1 partition,3,0.006331016667,True
+1,0.0505,A1_large_high,A1_rule,P2,1 partition,1,0.008013508333,True
+1,0.0505,A1_large_low,A1_search,P1,4 partitions,3,0.004123594333,True
+1,0.0505,A1_large_low,A1_rule,P1,4 partitions,1,0.005745553333,True
+1,0.0505,A1_large_low,A1_search,P2,1 partition,3,0.003973802917,True
+1,0.0505,A1_large_low,A1_rule,P2,1 partition,1,0.005102744444,True
+1,0.0505,A1_small_high,A1_search,P1,1 partition,3,0.00382285,True
+1,0.0505,A1_small_high,A1_rule,P1,1 partition,1,0.004951693333,True
+1,0.0505,A1_small_high,A1_search,P2,1 partition,2,0.003681393889,True
+1,0.0505,A1_small_high,A1_rule,P2,1 partition,1,0.0044856625,True
+1,0.0505,A1_small_low,A1_search,P1,2 partitions,3,0.003107265,True
+1,0.0505,A1_small_low,A1_rule,P1,2 partitions,1,0.004121136667,True
+1,0.0505,A1_small_low,A1_search,P2,1 partition,2,0.003084862639,True
+1,0.0505,A1_small_low,A1_rule,P2,1 partition,1,0.003803211111,True
+1,0.0505,A2_large_high,A2,P1,compact to 1 file,1,0.0038302735,True
+1,0.0505,A2_large_high,A2,P2,compact to 1 file,1,0.007498169861,True
+1,0.0505,A2_large_low,A2,P1,compact to 1 file,inf,-0.000192506,False
+1,0.0505,A2_large_low,A2,P2,compact to 1 file,11,-7.855555556e-07,False
+1,0.0505,A2_large_medium,A2,P1,compact to 1 file,1,0.002264436833,True
+1,0.0505,A2_large_medium,A2,P2,compact to 1 file,1,0.007313241667,True
+1,0.0505,A2_small_high,A2,P1,compact to 1 file,1,0.003966354167,True
+1,0.0505,A2_small_high,A2,P2,compact to 1 file,1,0.0038938025,True
+1,0.0505,A2_small_low,A2,P1,compact to 1 file,inf,-0.0001523921667,False
+1,0.0505,A2_small_low,A2,P2,compact to 1 file,inf,-3.306347222e-05,False
+1,0.0505,A2_small_medium,A2,P1,compact to 1 file,1,0.0034745515,True
+1,0.0505,A2_small_medium,A2,P2,compact to 1 file,1,0.003894798472,True
+1.5,0.07575,A1_large_high,A1_search,P1,4 partitions,3,0.00986701825,True
+1.5,0.07575,A1_large_high,A1_rule,P1,4 partitions,1,0.0136872675,True
+1.5,0.07575,A1_large_high,A1_search,P2,1 partition,3,0.009496525,True
+1.5,0.07575,A1_large_high,A1_rule,P2,1 partition,1,0.0120202625,True
+1.5,0.07575,A1_large_low,A1_search,P1,4 partitions,3,0.0061853915,True
+1.5,0.07575,A1_large_low,A1_rule,P1,4 partitions,1,0.00861833,True
+1.5,0.07575,A1_large_low,A1_search,P2,1 partition,3,0.005960704375,True
+1.5,0.07575,A1_large_low,A1_rule,P2,1 partition,1,0.007654116667,True
+1.5,0.07575,A1_small_high,A1_search,P1,1 partition,3,0.005734275,True
+1.5,0.07575,A1_small_high,A1_rule,P1,1 partition,1,0.00742754,True
+1.5,0.07575,A1_small_high,A1_search,P2,1 partition,2,0.005522090833,True
+1.5,0.07575,A1_small_high,A1_rule,P2,1 partition,1,0.00672849375,True
+1.5,0.07575,A1_small_low,A1_search,P1,2 partitions,3,0.0046608975,True
+1.5,0.07575,A1_small_low,A1_rule,P1,2 partitions,1,0.006181705,True
+1.5,0.07575,A1_small_low,A1_search,P2,1 partition,2,0.004627293958,True
+1.5,0.07575,A1_small_low,A1_rule,P2,1 partition,1,0.005704816667,True
+1.5,0.07575,A2_large_high,A2,P1,compact to 1 file,1,0.00574541025,True
+1.5,0.07575,A2_large_high,A2,P2,compact to 1 file,1,0.01124725479,True
+1.5,0.07575,A2_large_low,A2,P1,compact to 1 file,inf,-0.000288759,False
+1.5,0.07575,A2_large_low,A2,P2,compact to 1 file,11,-1.178333333e-06,False
+1.5,0.07575,A2_large_medium,A2,P1,compact to 1 file,1,0.00339665525,True
+1.5,0.07575,A2_large_medium,A2,P2,compact to 1 file,1,0.0109698625,True
+1.5,0.07575,A2_small_high,A2,P1,compact to 1 file,1,0.00594953125,True
+1.5,0.07575,A2_small_high,A2,P2,compact to 1 file,1,0.00584070375,True
+1.5,0.07575,A2_small_low,A2,P1,compact to 1 file,inf,-0.00022858825,False
+1.5,0.07575,A2_small_low,A2,P2,compact to 1 file,inf,-4.959520833e-05,False
+1.5,0.07575,A2_small_medium,A2,P1,compact to 1 file,1,0.00521182725,True
+1.5,0.07575,A2_small_medium,A2,P2,compact to 1 file,1,0.005842197708,True
