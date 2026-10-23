@@ -1,0 +1,5 @@
+workload_id,data_volume,file_count_level,shuffle_volume_level,seed,num_orders,actual_file_count,actual_size_mb,orders_path,customers_path
+V_medium_1f_s85,500000,1,0.85,701,500000,1,5.71,data/generated/V_medium_1f_s85/orders,data/generated/V_medium_1f_s85/customers
+V_medium_25f_s50,500000,25,0.50,702,500000,25,6.45,data/generated/V_medium_25f_s50/orders,data/generated/V_medium_25f_s50/customers
+V_small_25f_s15,50000,25,0.15,703,50000,25,0.65,data/generated/V_small_25f_s15/orders,data/generated/V_small_25f_s15/customers
+V_large_5f_s50,2000000,5,0.50,704,2000000,5,21.57,data/generated/V_large_5f_s50/orders,data/generated/V_large_5f_s50/customers

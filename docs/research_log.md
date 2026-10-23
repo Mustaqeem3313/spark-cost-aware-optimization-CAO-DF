@@ -37,6 +37,7 @@ machine above on 2026-10-20; all formal results come from the new machine.
 | 2026-10-21 | **E3 formal A1** — 4 workloads × 8 settings × 5 blocks = 160 measured runs (seed 123), ~15 min | `logs/a1_formal.log`, tag `a1-formal-v2` |
 | 2026-10-21 | E4 A2 pilot — 6 workloads × 3 stages × 3 blocks = 54 measured runs (seed 456); gate **PASSED** | `logs/a2_pilot.log`, `results/raw/pilot_a2.csv` |
 | 2026-10-21 | **E5 formal A2** — 6 workloads × 3 stages × 5 blocks = 90 measured runs | `logs/a2_formal.log` |
+| 2026-10-23 | **E6 framework validation** — 4 unseen workloads × 10 stages × 3 blocks = 120 measured runs (seed 789), ~15 min | `logs/validation.log`, `experiment_action = VAL` |
 
 ### Workload shuffle-scaling gate (E1, study machine)
 
@@ -228,6 +229,81 @@ A1 rule-based (Copt = 0): N* = 1 everywhere.
 
 ---
 
+## 3c. Decision framework and validation (Phase 9, E6)
+
+Code: `src/decision_framework.py` (rule + validation), `src/run_validation.py` (E6 runner),
+`src/workload_generator.py --validation` (unseen workloads), `src/make_figures.py` (paper
+figures). Outputs: `results/processed/validation_cell_summary.csv`, `validation_decisions.csv`,
+`validation_summary.csv`, `framework_loo.csv`; figures `fig_validation`, `fig_breakeven_map`.
+
+**Rule (decided with the author).** For a new workload, describe it by (log orders, log files,
+shuffle fraction), each scaled by its range in the study. For each action take the **nearest
+measured study workload** (Euclidean; ties averaged) and copy its saving per run *s* and its
+one-time cost ratio *r* = Copt / Crun_static. Predicted total cost in static-run units: do
+nothing = N; action = r + N(1 − s). An action is considered only if *s* ≥ **δ = 10 %** of a static
+run (noise floor). Pick the lowest predicted cost; ties go to "do nothing". One action at a time
+(D3). Baseline "performance-only" picks the largest estimated saving and ignores Copt; the
+"oracle" picks the cheapest option using the measured validation costs (hindsight).
+
+**Validation workloads (new seeds 701–704, factor values never used in the study):**
+
+| Workload | Orders | Files | Shuffle fraction | Size |
+|---|---|---|---|---|
+| V_medium_1f_s85 | 500 K | 1 | 0.85 | 5.7 MB |
+| V_medium_25f_s50 | 500 K | 25 | 0.50 | 6.5 MB |
+| V_small_25f_s15 | 50 K | 25 | 0.15 | 0.65 MB |
+| V_large_5f_s50 | 2 M | 5 | 0.50 | 21.6 MB |
+
+Each block runs every workload with all 8 partition settings, the compaction job and the
+compacted run (200 partitions), in shuffled order, fresh read each run (no caching), 1 discarded
+warm-up per measured run. Measured "tune" option = search over all 8 settings (Copt = sum) then
+the best setting; "compact" = compaction job + compacted run; "nothing" = 200 partitions.
+2 of 40 cells have CV > 0.2 (V_medium_1f shuffle8 0.21, V_medium_25f compaction 0.26).
+
+**Results (16 cases per proxy = 4 workloads × N ∈ {1, 5, 10, 50}):**
+
+| Proxy | Strategy | Win / tie / loss vs static | Mean cost reduction (95 % bootstrap CI) | Total-cost reduction | Matches oracle | Max regret |
+|---|---|---|---|---|---|---|
+| P1 | CAO-DF | 13 / 1 / 2 | 47.3 % (30.5 – 62.3) | 74.1 % | 14 / 16 | 23.9 % |
+| P1 | performance-only | 12 / 0 / 4 | 6.5 % (−44.0 – 50.1) | 71.6 % | — | — |
+| P2 | CAO-DF | 15 / 1 / 0 | 72.2 % (59.6 – 81.8) | 87.9 % | 14 / 16 | 13.6 % |
+| P2 | performance-only | 12 / 0 / 4 | 23.2 % (−23.2 – 62.6) | 83.6 % | — | — |
+
+Oracle mean reduction: 49.7 % (P1), 72.6 % (P2). Win/tie uses |ΔTC| ≤ δ · TC_static as a tie.
+
+- **F-FW-1 — H2 supported.** CAO-DF is no worse than static in 14/16 (P1) and 16/16 (P2)
+  cases, lower on average, and the bootstrap CI excludes 0 under both proxies. It is within
+  2.4 points (P1) / 0.4 points (P2) of the hindsight oracle on average.
+- **F-FW-2 — The value is in the one-time cost.** Performance-only always picks "tune" (largest
+  saving) and is 2.4–2.7× the static cost at N = 1 (P1) — the search costs more than one run
+  saves. CAO-DF avoids all four of these losses. For N ≥ 5 performance-only also beats static,
+  but where cheap compaction is enough CAO-DF saves more (e.g. 50 K / 25 files, N = 5, P1:
+  57.4 % vs 41.9 %).
+- **F-FW-3 — Choices switch with N as the theory predicts:** compaction (cheap, smaller saving)
+  for few runs, tuning (expensive search, larger saving) for many; "do nothing" on the 1-file
+  workload at N = 1.
+- **F-FW-4 — Tuning estimates transfer well; compaction estimates under P1 do not.** Estimated
+  vs measured tuning saving differs by ≤ 3.4 points on every unseen workload. Compaction under
+  P2 is over-estimated by 6–17 points but keeps the right sign. Under P1, compaction on the
+  500 K / 25-file and 2 M / 5-file workloads saved −1.7 % and 3.3 % of wall-clock time
+  (estimated 34 % and 23 %), so CAO-DF's two P1 losses (N = 1, regret 14.5 % and 23.9 %) both
+  come from compaction. On the 50 K / 25-file workload compaction saved 59 % (estimated 67 %).
+  Interpretation: compaction always cuts executor task time (P2) but whether that shows up as
+  wall-clock time depends on how much of the run it leaves idle cores — not captured by the
+  three features. Report as an observed limit, not an explanation.
+- **F-FW-5 — Best partition count on unseen data is again small:** 2 (three workloads) or 4
+  (wall-clock); 1 for executor time on all four — consistent with F-A1-4.
+- **F-FW-6 — Leave-one-out on the study workloads: 80 % agreement (64/80).** All 16
+  disagreements are the two 1-file A2 workloads, whose nearest neighbour (10 files) gains from
+  compaction — the rule cannot extrapolate to the edge of the study range. On the unseen 1-file
+  workload the A2 neighbour is a 1-file workload and compaction was correctly rejected.
+- **F-FW-7 — Robust to δ.** δ ∈ {0, 5 %, 20 %} gives identical choices; only the win/tie label
+  of one P1 case changes at 20 %.
+- **Rule-based tuning (Copt = 0, neighbour's partition setting):** 82–87 % (P1) / 94–98 % (P2)
+  cost reduction at every N — reported as the lower-bound sensitivity, as in Phase 8.
+
+---
+
 ## 4. Limitations register (for the Threats to Validity section)
 
 | # | Limitation | Affects | Mitigation / wording |
@@ -241,6 +317,10 @@ A1 rule-based (Copt = 0): N* = 1 everywhere.
 | L7 | AQE disabled (would coalesce partitions automatically) | Practical relevance of A1 | Justified for control; AQE arm = future work |
 | L8 | Synthetic data, one seed for formal workloads | Generality | Validation workloads use different seeds |
 | L9 | Costs are estimated from published pricing, never billed | Cost model | Label consistently; sensitivity ±50 % |
+| L10 | Framework validated on only 4 unseen workloads × 3 blocks (16 cases per proxy) and learned from 4 (A1) / 6 (A2) study workloads | Strength of H2 evidence | Bootstrap CI, LOO check, δ sensitivity; call it a first validation |
+| L11 | Nearest-neighbour estimate cannot extrapolate beyond the study range (LOO misses at 1 file) and misses wall-clock compaction savings (F-FW-4) | Framework accuracy | Report both failure cases and the regret; richer features / more training workloads = future work |
+| L12 | A1 study ratios come from runs with cached input; validation runs read fresh each time | Transfer of A1 estimates | Part of the generalisation test; estimates still within 3.4 points (F-FW-4) |
+| L13 | The measured "tune" option assumes a full 8-setting search each time; a cheaper search (or AQE) would lower Copt | A1 cost | Rule-based lower bound reported alongside |
 
 ---
 
@@ -267,4 +347,6 @@ A1 rule-based (Copt = 0): N* = 1 everywhere.
 - **2026-10-23 — A1 Copt definition:** primary = search-based (one measured run of each candidate shuffle-partition setting, i.e. the cost of discovering the optimum); sensitivity = rule-based lower bound (Copt ~ 0, N* = 1). Chosen by the author; mirrors A2 where Copt is the measured compaction job.
 - **2026-10-23 — Reference verification (paper/references.bib):** every entry checked against Crossref, arXiv or the publisher page. Corrected: [3] LOCAT pp. 674–684 (not 1345–1358); [5] Lyu et al. vol. 17 no. 11 pp. 3565–3579 (not no. 12, –3578); [19] OptEx DOI 10.1109/CCGrid.2016.10 (.111 belongs to an unrelated paper). Added missing DOIs/pages for [1], [4], [6], [8], [9], [15], [22], [24]. [16] (Gilad blog) could not be located and was removed from the paper. Appendix A updated accordingly.
 - **2026-10-23 — Paper draft:** IEEEtran skeleton in `paper/`; Sections I–V and VIII drafted; Results, Discussion and Conclusion are placeholders until Phases 8–10. Compiles cleanly (tested with Tectonic 0.17).
+- **2026-10-23 — Phase 9 design (author):** nearest measured workload for estimates; noise floor δ = 10 % of a static run; validation on 4 unseen workloads × 3 blocks; paper limited to 8 pages including references, plain language, more figures.
+- **2026-10-23 — Phase 9 complete:** E6 run (120 runs), framework validation, H2 supported (F-FW-1). Paper figures now produced by `src/make_figures.py`.
 - **2026-10-23 — Phase 8 complete:** region/instance for pricing = m6i, Asia Pacific (Mumbai), chosen by the author; P1 charges 12 vCPUs (the study machine's task slots). Cost model, assumptions file, break-even table, sensitivity and total-cost figures produced; Results §VI-C drafted.

@@ -21,13 +21,20 @@ Each workload gets a ``manifest.json`` recording both the requested levels and
 what was actually written (rows, files, bytes), so every factor level is
 measured rather than assumed.
 
+Validation workloads (Phase 9, experiment E6) are generated separately with new
+seeds and factor values that the study workloads never use (500 000 orders, 5 or
+25 files, 50 % shuffle fraction), so the decision framework is tested on data it
+has not seen.
+
 Usage::
 
-    python src/workload_generator.py      # generate all 10 workloads + index, then run an integration check
+    python src/workload_generator.py                # 10 study workloads + index, then an integration check
+    python src/workload_generator.py --validation   # 4 unseen validation workloads + their index
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -40,7 +47,13 @@ import numpy as np
 import pandas as pd
 from pyspark.sql import SparkSession
 
-from src.paths import DATA_GENERATED_DIR, WORKLOAD_INDEX_PATH, from_project_relative, to_project_relative
+from src.paths import (
+    DATA_GENERATED_DIR,
+    VALIDATION_INDEX_PATH,
+    WORKLOAD_INDEX_PATH,
+    from_project_relative,
+    to_project_relative,
+)
 
 DATA_SEED = 42
 
@@ -51,6 +64,14 @@ SHUFFLE_VOLUME_LEVELS = {"low": 0.15, "high": 0.85}  # fraction of orders with a
 MIN_CUSTOMERS = 500
 ORDERS_PER_CUSTOMER = 100
 CUSTOMER_FILE_COUNT = 2
+
+# Unseen validation workloads: (workload_id, orders, order files, shuffle fraction, seed).
+VALIDATION_WORKLOADS = [
+    ("V_medium_1f_s85", 500_000, 1, 0.85, 701),
+    ("V_medium_25f_s50", 500_000, 25, 0.50, 702),
+    ("V_small_25f_s15", 50_000, 25, 0.15, 703),
+    ("V_large_5f_s50", 2_000_000, 5, 0.50, 704),
+]
 
 REGIONS = ["north", "south", "east", "west"]
 SEGMENTS = ["retail", "enterprise", "smb"]
@@ -104,7 +125,7 @@ def generate_workload(
     seed: int = DATA_SEED,
     output_root: Path = DATA_GENERATED_DIR,
 ) -> dict[str, Any]:
-    """Generate one workload, write it as Parquet, and return its manifest.
+    """Generate one study workload from named factor levels and return its manifest.
 
     Raises:
         ValueError: If a level name is not defined.
@@ -114,10 +135,29 @@ def generate_workload(
                                 ("shuffle_volume_level", shuffle_volume_level, SHUFFLE_VOLUME_LEVELS)):
         if value not in levels:
             raise ValueError(f"{name} must be one of {list(levels)}, got '{value}'")
+    return write_workload(
+        spark, workload_id,
+        num_orders=DATA_VOLUME_LEVELS[data_volume],
+        num_files=FILE_COUNT_LEVELS[file_count_level],
+        shuffle_fraction=SHUFFLE_VOLUME_LEVELS[shuffle_volume_level],
+        seed=seed,
+        labels={"data_volume": data_volume, "file_count_level": file_count_level,
+                "shuffle_volume_level": shuffle_volume_level},
+        output_root=output_root,
+    )
 
-    num_orders = DATA_VOLUME_LEVELS[data_volume]
-    num_files = FILE_COUNT_LEVELS[file_count_level]
-    shuffle_fraction = SHUFFLE_VOLUME_LEVELS[shuffle_volume_level]
+
+def write_workload(
+    spark: SparkSession,
+    workload_id: str,
+    num_orders: int,
+    num_files: int,
+    shuffle_fraction: float,
+    seed: int,
+    labels: dict[str, str],
+    output_root: Path = DATA_GENERATED_DIR,
+) -> dict[str, Any]:
+    """Generate one workload from explicit sizes, write it as Parquet, and return its manifest."""
     num_customers = max(MIN_CUSTOMERS, num_orders // ORDERS_PER_CUSTOMER)
 
     rng = np.random.default_rng(seed)
@@ -142,11 +182,7 @@ def generate_workload(
 
     manifest = {
         "workload_id": workload_id,
-        "requested": {
-            "data_volume": data_volume,
-            "file_count_level": file_count_level,
-            "shuffle_volume_level": shuffle_volume_level,
-        },
+        "requested": dict(labels),
         "seed": seed,
         "measured": {
             "num_orders_generated": int(num_orders),
@@ -171,6 +207,24 @@ def generate_workload(
     return manifest
 
 
+def _write_index(manifests: list[dict[str, Any]], path: Path) -> None:
+    index = pd.DataFrame([{
+        "workload_id": m["workload_id"],
+        "data_volume": m["requested"]["data_volume"],
+        "file_count_level": m["requested"]["file_count_level"],
+        "shuffle_volume_level": m["requested"]["shuffle_volume_level"],
+        "seed": m["seed"],
+        "num_orders": m["measured"]["num_orders_generated"],
+        "actual_file_count": m["measured"]["actual_order_file_count"],
+        "actual_size_mb": m["measured"]["actual_order_size_mb"],
+        "orders_path": m["paths"]["orders"],
+        "customers_path": m["paths"]["customers"],
+    } for m in manifests], columns=INDEX_COLUMNS)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    index.to_csv(path, index=False)
+    print(f"[workload_generator] Wrote index of {len(index)} workloads to {to_project_relative(path)}")
+
+
 def generate_all_workloads(spark: SparkSession, seed: int = DATA_SEED) -> list[dict[str, Any]]:
     """Generate the 10 study workloads and write the workload index.
 
@@ -184,33 +238,33 @@ def generate_all_workloads(spark: SparkSession, seed: int = DATA_SEED) -> list[d
 
     manifests = [generate_workload(spark, wid, vol, files, shuf, seed=seed)
                  for wid, vol, files, shuf in specs]
+    _write_index(manifests, WORKLOAD_INDEX_PATH)
+    return manifests
 
-    index = pd.DataFrame([{
-        "workload_id": m["workload_id"],
-        "data_volume": m["requested"]["data_volume"],
-        "file_count_level": m["requested"]["file_count_level"],
-        "shuffle_volume_level": m["requested"]["shuffle_volume_level"],
-        "seed": m["seed"],
-        "num_orders": m["measured"]["num_orders_generated"],
-        "actual_file_count": m["measured"]["actual_order_file_count"],
-        "actual_size_mb": m["measured"]["actual_order_size_mb"],
-        "orders_path": m["paths"]["orders"],
-        "customers_path": m["paths"]["customers"],
-    } for m in manifests], columns=INDEX_COLUMNS)
 
-    WORKLOAD_INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
-    index.to_csv(WORKLOAD_INDEX_PATH, index=False)
-    print(f"[workload_generator] Wrote index of {len(index)} workloads to {to_project_relative(WORKLOAD_INDEX_PATH)}")
+def generate_validation_workloads(spark: SparkSession) -> list[dict[str, Any]]:
+    """Generate the unseen validation workloads (new seeds and factor values) and their index."""
+    manifests = []
+    for wid, orders, files, fraction, seed in VALIDATION_WORKLOADS:
+        labels = {"data_volume": str(orders), "file_count_level": str(files),
+                  "shuffle_volume_level": f"{fraction:.2f}"}
+        manifests.append(write_workload(spark, wid, orders, files, fraction, seed, labels))
+    _write_index(manifests, VALIDATION_INDEX_PATH)
     return manifests
 
 
 def main() -> None:
-    """Generate every workload, then check the pipeline consumes the output correctly."""
+    """Generate the workloads, then check the pipeline consumes the output correctly."""
     from src.baseline_pipeline import run_pipeline, verify_correctness, verify_shuffle_plan
     from src.spark_config import get_spark_session
 
+    parser = argparse.ArgumentParser(description="Generate the synthetic workloads.")
+    parser.add_argument("--validation", action="store_true",
+                        help="generate the unseen validation workloads instead of the study workloads")
+    args = parser.parse_args()
+
     spark = get_spark_session("workload_generation", shuffle_partitions=50)
-    manifests = generate_all_workloads(spark)
+    manifests = generate_validation_workloads(spark) if args.validation else generate_all_workloads(spark)
 
     print("\n[workload_generator] Integration check against the baseline pipeline:")
     sample = manifests[0]

@@ -65,6 +65,11 @@ Before any timed step: connect AC power, select the best-performance power mode 
 | 8. Formal A2 matrix | `python src\run_a2_experiments.py 2>&1 \| Tee-Object logs\a2_formal.log` | `results/raw/experiment_results.csv`, `results/processed/a2_*.csv` |
 | A1 outlier sensitivity (no Spark) | `python src\robustness_check.py` | `results/processed/a1_outlier_robustness.csv` |
 | 9. Cost model and break-even (no Spark) | `python src\cost_model.py [--price 0.0505] [--vcpus 12]` | `results/processed/cost_per_cell.csv`, `breakeven_table.csv`, `cost_sensitivity.csv`; `results/figures/total_cost_curves_*` |
+| 10. Unseen validation workloads | `python src\workload_generator.py --validation` | `data/generated/V_*`, `experiments/configs/validation_index.csv` |
+| 11. Framework validation runs (E6) | `python src\run_validation.py 2>&1 \| Tee-Object logs\validation.log` | `results/raw/experiment_results.csv` (`VAL` rows), `results/processed/validation_cell_summary.csv` |
+| 12. Decision framework + validation (no Spark) | `python src\decision_framework.py [--delta 0.10]` | `validation_decisions.csv`, `validation_summary.csv`, `framework_loo.csv` |
+| Ask the framework for one workload | `python src\decision_framework.py --decide --orders 500000 --files 25 --shuffle 0.5 --runs 5` | printed choice: Nothing / Tune / Compact |
+| 13. Paper figures (no Spark) | `python src\make_figures.py` | `paper/figures/fig_*.pdf`, `results/figures/fig_*.png` |
 
 Costs are estimated from published AWS EC2 on-demand pricing, never billed; the price, proxies and assumptions are documented in [`Cost_Model_Assumptions.md`](Cost_Model_Assumptions.md).
 
@@ -94,6 +99,9 @@ src/
   run_a2_experiments.py       A2 pilot and formal matrix (fragmented -> compaction -> compacted)
   robustness_check.py         A1 sensitivity: do conclusions change if noisy-cell outliers are dropped?
   cost_model.py               estimated cost (proxies P1/P2), TC(a, N), break-even N*, price sensitivity
+  run_validation.py           E6: all actions on the unseen validation workloads
+  decision_framework.py       CAO-DF rule (nearest measured workload + noise floor) and its validation
+  make_figures.py             builds every paper figure from the result files
   environment_report.py       generates environment.md
 docs/research_log.md          dated record of runs, findings, limitations and decisions
 experiments/configs/          workload index

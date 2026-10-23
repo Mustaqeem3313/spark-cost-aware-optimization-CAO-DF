@@ -10,6 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 DATA_GENERATED_DIR = PROJECT_ROOT / "data" / "generated"
 WORKLOAD_INDEX_PATH = PROJECT_ROOT / "experiments" / "configs" / "workload_index.csv"
+VALIDATION_INDEX_PATH = PROJECT_ROOT / "experiments" / "configs" / "validation_index.csv"
 
 RESULTS_RAW_DIR = PROJECT_ROOT / "results" / "raw"
 RESULTS_PROCESSED_DIR = PROJECT_ROOT / "results" / "processed"

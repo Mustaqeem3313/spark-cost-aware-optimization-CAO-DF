@@ -80,11 +80,11 @@ Optimizing a Spark pipeline is not free: tuning shuffle partitions or compacting
 | Metric | Value |
 |---|---|
 | Total phases | **12** (Phase 0 – Phase 11) |
-| Completed | **9** (Phases 0 – 8) |
-| In progress | **0** — Phase 9 (decision framework) is next; paper §§ I–V, VIII drafted |
-| Not started | **3** (Phases 9, 10, 11) |
-| Overall progress | `█████████░░░` **9 / 12 complete (75 %)** |
-| Experimental data collected | **Formal A1** (E3, 160 runs, tag `a1-formal-v2`) · **Formal A2** (E5, 90 runs, tag `a2-formal-v2`) · A2 pilot (E4, 54 runs) |
+| Completed | **10** (Phases 0 – 9) |
+| In progress | **1** — Phase 10 (analysis, figures, verdicts) and the paper rewrite (≤ 8 pages, plain language) |
+| Not started | **1** (Phase 11 finalisation) |
+| Overall progress | `█████████░░░` **10 / 12 complete (83 %)** |
+| Experimental data collected | **Formal A1** (E3, 160 runs, tag `a1-formal-v2`) · **Formal A2** (E5, 90 runs, tag `a2-formal-v2`) · A2 pilot (E4, 54 runs) · **Framework validation** (E6, 120 runs) |
 | Schedule | Re-baselined in §19.2; college deadline **15 Nov 2026** |
 
 > **Status note.** Formal results now exist for both actions. Findings, anomalies, limitations and decisions are recorded in `docs/research_log.md`, which is the authoritative record for the Results and Threats-to-Validity sections. Numbers in §16.5–16.6 and Appendix E remain pilot/exploratory evidence.
@@ -437,7 +437,8 @@ decide(workload w, expected executions N):
 ```
 
 - **Rule-based, no ML** (explicitly out of scope).
-- Open design choice for Phase 9: how `estimate()` generalizes to *unseen* workloads — options in increasing complexity: (a) nearest measured workload, (b) threshold rules on shuffle MB / file count, (c) simple interpolation. **Prefer the simplest interpretable option that validates.**
+- **Final rule (23 Oct 2026, chosen by the author):** `estimate()` = nearest measured study workload on (log orders, log files, shuffle fraction), copying its saving per run and Copt/Crun_static ratio; an action is considered only if its saving ≥ δ = 10 % of a static run. Validated on 4 unseen workloads × 3 blocks (E6). Results: research log §3c.
+- Original design choice for Phase 9: how `estimate()` generalizes to *unseen* workloads — options in increasing complexity: (a) nearest measured workload, (b) threshold rules on shuffle MB / file count, (c) simple interpolation. **Prefer the simplest interpretable option that validates.**
 - Validation: unseen workloads (e.g. medium volume, intermediate levels, different seeds) × N ∈ {1, 5, 10, 50}; compare Static vs Framework (and optionally Performance-only) on total estimated cost.
 
 ### 12.5 Methodological safeguards (the "experiment protocol")
@@ -470,7 +471,7 @@ decide(workload w, expected executions N):
 | E3 | **Formal A1 matrix** | RQ1 / RQ3 evidence for shuffle tuning | ✅ Done 21 Oct — 160 runs; tag `a1-formal-v2` |
 | E4 | A2 pilot (compaction) | Check compaction benefit is detectable above noise; pilot gate | ✅ Done 21 Oct — gate **PASSED** |
 | E5 | **Formal A2 matrix** | RQ1 / RQ3 evidence for compaction | ✅ Done 21 Oct — 90 runs; tag `a2-formal-v2` |
-| E6 | Framework validation on unseen workloads | RQ2 / H2 | ☐ |
+| E6 | Framework validation on unseen workloads | RQ2 / H2 | ✅ Done 23 Oct — 120 runs; H2 supported (research log §3c) |
 
 ### 13.2 A1 — shuffle/partition tuning (formal)
 
@@ -655,7 +656,9 @@ spark-cost-aware-optimization/
 │   ├── run_a2_experiments.py     ✅ A2 pilot + formal runner (E4, E5 done)
 │   ├── robustness_check.py       ✅ A1 outlier sensitivity check
 │   ├── cost_model.py             ✅ Phase 8 cost model and break-even
-│   └── decision_framework.py     ☐ (Phase 9)
+│   ├── decision_framework.py     ✅ Phase 9 decision rule + validation
+│   ├── run_validation.py         ✅ Phase 9 E6 runner
+│   └── make_figures.py           ✅ paper figures
 ├── experiments/configs/workload_index.csv     # written by the generator
 ├── data/{raw,generated}/                       # generated Parquet (git-ignored)
 ├── results/
@@ -839,7 +842,7 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 | **6** | A1 — shuffle/partition tuning | Measure cost-performance of `spark.sql.shuffle.partitions` | Formal A1 rows + best-config table | ✅ **Done** (21 Oct) |
 | **7** | A2 — file compaction | Measure compaction cost (`Copt`) and benefit | A2 rows + compaction cost/benefit table | ✅ **Done** (21 Oct) |
 | **8** | Cost model + break-even | Convert measurements to estimated cost; compute OBEP | `cost_model.py`, `Cost_Model_Assumptions.md`, break-even table | ✅ Done (23 Oct) |
-| **9** | Decision framework | Rule-based {Nothing \| Tune \| Compact}; validate vs static | `decision_framework.py`, validation table | ☐ Not started |
+| **9** | Decision framework | Rule-based {Nothing \| Tune \| Compact}; validate vs static | `decision_framework.py`, validation table | ✅ Done (23 Oct) |
 | **10** | Analysis, figures, hypotheses | Statistics, 7 figures, H1/H2 verdicts | `analysis/analysis.ipynb`, figures | ☐ Not started |
 | **11** | Paper, revision, submission | IEEE paper + reproducibility package | Submission-ready paper | ☐ Not started |
 
@@ -868,11 +871,12 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 - [x] Break-even table per workload and N ∈ {1, 5, 10, 50}; curves; **sensitivity** (price ±50 %, both proxies).
 - **Deliverable:** `cost_model.py`, assumptions file, break-even table.
 
-#### Phase 9 — Decision framework (build + validate)
-- [ ] Implement `decide(workload, N)` as a rule-based function (no ML).
-- [ ] Generate **unseen** validation workloads (new seeds, medium volume, intermediate levels).
-- [ ] Compare Static vs Framework (and optionally Performance-only) on total estimated cost per workload × N.
-- [ ] Never round or invent figures: every number must trace to `experiment_results.csv`.
+#### Phase 9 — Decision framework (build + validate) ✅ *(done 23 Oct 2026)*
+- [x] Implement `decide(workload, N)` as a rule-based function (no ML) — nearest measured workload, noise floor δ = 10 %.
+- [x] Generate **unseen** validation workloads (seeds 701–704; 500 K orders, 5/25 files, 0.50 shuffle).
+- [x] Compare Static vs Framework and Performance-only on total estimated cost per workload × N (E6, 120 runs).
+- [x] Never round or invent figures: every number must trace to `experiment_results.csv`.
+- **Result:** H2 supported under both proxies (P1: 13 win / 1 tie / 2 loss, mean −47.3 %, CI 30.5–62.3 %; P2: 15/1/0, −72.2 %, CI 59.6–81.8 %). Two P1 losses come from over-estimated compaction savings (research log F-FW-4).
 - **Deliverable:** `decision_framework.py` + validation table.
 
 #### Phase 10 — Analysis, figures, hypotheses
@@ -984,7 +988,7 @@ The first two weeks of work were completed quickly; the project then stalled for
 
 ### 20.2 Then
 
-4. ☐ Phase 9 → 10 → 11 as in §17.2; draft paper §§ I–V in parallel (`paper/`, IEEEtran LaTeX).
+4. ◐ Phase 9 ✅ (23 Oct); Phase 10 → 11 as in §17.2; draft paper §§ I–V in parallel (`paper/`, IEEEtran LaTeX).
 
 ### 20.3 Housekeeping
 

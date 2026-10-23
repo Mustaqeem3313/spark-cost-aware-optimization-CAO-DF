@@ -33,11 +33,11 @@
 32,8,Cost model,Define Copt for A1 (search vs rule) and A2 (compaction job),Done,A1 search (primary) / rule (sensitivity); A2 measured job
 33,8,Cost model,"cost_model.py: Crun, Copt, TC(a,N), N*",Done,src/cost_model.py
 34,8,Cost model,"Break-even table, N in {1,5,10,50}; sensitivity +/-50% and both proxies",Done,"results/processed/breakeven_table.csv, cost_sensitivity.csv"
-35,9,Decision framework,"decision_framework.py: rule-based decide(w, N) with noise-floor threshold",Pending,
-36,9,Decision framework,"Generate unseen validation workloads (new seeds, medium volume)",Pending,
-37,9,Decision framework,Validate: Static vs Framework total estimated cost,Pending,E6
+35,9,Decision framework,"decision_framework.py: rule-based decide(w, N) with noise-floor threshold",Done,"Nearest measured workload; delta = 10% (src/decision_framework.py)"
+36,9,Decision framework,"Generate unseen validation workloads (new seeds, medium volume)",Done,"4 workloads, seeds 701-704 (workload_generator.py --validation)"
+37,9,Decision framework,Validate: Static vs Framework total estimated cost,Done,"E6 120 runs; H2 supported (research log 3c)"
 38,10,Analysis,"Descriptive stats, effect sizes, bootstrap CIs",Pending,
-39,10,Analysis,7 figures (F1-F7) + tables T1-T4,Pending,
+39,10,Analysis,7 figures (F1-F7) + tables T1-T4,In progress,"src/make_figures.py: 6 paper figures"
 40,10,Analysis,H1 / H2 verdicts,Pending,
 41,11,Paper,Choose venue / format (IEEE conference template),Done,IEEEtran LaTeX (venue TBD)
 42,11,Paper,Draft I Introduction,In progress,Drafted; headline results pending
