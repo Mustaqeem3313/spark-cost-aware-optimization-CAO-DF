@@ -1520,11 +1520,11 @@ python src/run_a1_experiments.py --partitions 1 2 4 8 16 50 200 400
 
 [2] D. Buchaca Prats, F. Albuquerque Portella, C. H. A. Costa, and J. L. Berral, "You only run once: Spark auto-tuning from a single run," *IEEE Trans. Netw. Service Manage.*, vol. 17, no. 4, pp. 2039–2051, Dec. 2020, doi: 10.1109/TNSM.2020.3034824.
 
-[3] J. Xin, K. Hwang, and Z. Yu, "LOCAT: Low-overhead online configuration auto-tuning of Spark SQL applications," in *Proc. 2022 Int. Conf. Management of Data (SIGMOD '22)*, Philadelphia, PA, USA, 2022, pp. 1345–1358, doi: 10.1145/3514221.3526157.
+[3] J. Xin, K. Hwang, and Z. Yu, "LOCAT: Low-overhead online configuration auto-tuning of Spark SQL applications," in *Proc. 2022 Int. Conf. Management of Data (SIGMOD '22)*, Philadelphia, PA, USA, 2022, pp. 674–684, doi: 10.1145/3514221.3526157.
 
 [4] Y. Li *et al.*, "Towards general and efficient online tuning for Spark," *Proc. VLDB Endow.*, vol. 16, no. 12, pp. 3570–3583, 2023.
 
-[5] C. Lyu *et al.*, "A Spark optimizer for adaptive, fine-grained parameter tuning," *Proc. VLDB Endow.*, vol. 17, no. 12, pp. 3565–3578, 2024, doi: 10.14778/3681954.3682021.
+[5] C. Lyu *et al.*, "A Spark optimizer for adaptive, fine-grained parameter tuning," *Proc. VLDB Endow.*, vol. 17, no. 11, pp. 3565–3579, 2024, doi: 10.14778/3681954.3682021.
 
 [6] J. Li, J. Ye, Y. Mao, Y. Gao, and L. Chen, "LOFTune: A low-overhead and flexible approach for Spark SQL configuration tuning," *IEEE Trans. Knowl. Data Eng.*, 2025.
 
@@ -1546,13 +1546,13 @@ python src/run_a1_experiments.py --partitions 1 2 4 8 16 50 200 400
 
 [15] V. V. Meduri, D. Kreismann, R. Barber, and B. Reinwald, "PTO: A workload-driven predictive table optimizer for lakehouse systems," *Proc. ACM Manage. Data*, vol. 4, no. 1, 2026, doi: 10.1145/3786681.
 
-[16] A. Gilad, "Cracking the ice: The battle between sort and binpack in Apache Iceberg," industry blog, 2025.
+[16] A. Gilad, "Cracking the ice: The battle between sort and binpack in Apache Iceberg," industry blog, 2025. *(Source could not be located during reference verification, Oct 2026; removed from the paper.)*
 
 [17] A. Fekry, L. Carata, T. Pasquier, A. Rice, and A. Hopper, "To tune or not to tune? In search of optimal configurations for data analytics," in *Proc. 26th ACM SIGKDD Conf. Knowledge Discovery and Data Mining (KDD '20)*, 2020, pp. 2494–2504, doi: 10.1145/3394486.3403299.
 
 [18] A. Fekry, L. Carata, T. Pasquier, A. Rice, and A. Hopper, "Tuneful: An online significance-aware configuration tuner for big data analytics," arXiv preprint, 2020.
 
-[19] S. Sidhanta, W. Golab, and S. Mukhopadhyay, "OptEx: A deadline-aware cost optimization model for Spark," in *Proc. 2016 16th IEEE/ACM Int. Symp. Cluster, Cloud and Grid Computing (CCGrid)*, Cartagena, Colombia, 2016, pp. 193–202, doi: 10.1109/CCGrid.2016.111.
+[19] S. Sidhanta, W. Golab, and S. Mukhopadhyay, "OptEx: A deadline-aware cost optimization model for Spark," in *Proc. 2016 16th IEEE/ACM Int. Symp. Cluster, Cloud and Grid Computing (CCGrid)*, Cartagena, Colombia, 2016, pp. 193–202, doi: 10.1109/CCGrid.2016.10.
 
 [20] I. Chang, "Cross-layer decision timing orchestration in cost-based database systems: Resolving structural temporal misalignment," arXiv preprint arXiv:2603.02253, Feb. 2026. (Unpublished preprint, not yet peer-reviewed.)
 

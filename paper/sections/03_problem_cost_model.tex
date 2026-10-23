@@ -1,0 +1,88 @@
+\section{Problem Definition and Cost Model}
+\label{sec:problem}
+
+\subsection{Setting}
+We consider a recurring Spark pipeline that is about to be executed $N$ more times over data
+with similar characteristics. A workload $w$ is described by three observable features: its
+data volume, the number of files its input is split into (fragmentation), and the volume of
+data it shuffles. The operator may leave the pipeline in its \emph{static} configuration or
+apply one optimization action $a$ once, before the next execution. We study two actions of
+different kinds:
+\begin{itemize}
+  \item \textbf{A1, shuffle-partition tuning} (execution level): change
+        \texttt{spark.sql.shuffle.partitions} from its default of 200 to a value chosen for $w$;
+  \item \textbf{A2, file compaction} (storage level): rewrite the input files of $w$ into
+        fewer, larger files.
+\end{itemize}
+The static baseline uses 200 shuffle partitions and no compaction. We restrict the action set
+to $\mathcal{A} = \{\textit{none}, \mathrm{A1}, \mathrm{A2}\}$; a combined A1+A2 action is
+deliberately excluded so that the effect of each action can be attributed cleanly.
+
+\subsection{Total cost and break-even point}
+Let $\Crun(a)$ be the cost of one execution of the pipeline after action $a$ has been applied,
+and $\Copt(a)$ the one-time cost of applying it. With $\Cstatic = \Crun(\textit{none})$ and
+$\Copt(\textit{none}) = 0$, the total cost of choosing $a$ for the next $N$ executions is
+\begin{equation}
+  TC(a, N) = \Copt(a) + N \cdot \Crun(a).
+  \label{eq:tc}
+\end{equation}
+An action breaks even over $N$ executions when $TC(a,N) \le TC(\textit{none},N)$.
+Writing $\Delta(a) = \Cstatic - \Crun(a)$ for the per-execution saving, the optimization
+break-even point (OBEP) is the smallest $N$ at which the accumulated saving $N \cdot \Delta(a)$
+covers the one-time cost:
+\begin{equation}
+  \Nstar(a) =
+  \begin{cases}
+    \left\lceil \Copt(a) / \Delta(a) \right\rceil & \text{if } \Delta(a) > 0,\\
+    \infty & \text{otherwise.}
+  \end{cases}
+  \label{eq:obep}
+\end{equation}
+An action with no saving never pays off, however often the pipeline runs; an action whose
+one-time cost is smaller than a single saving pays off at the first execution
+($\Nstar = 1$).
+
+\subsection{Estimating cost}
+All costs are \emph{estimated} from published cloud prices; nothing is billed. We price compute
+at the AWS EC2 on-demand rate per vCPU-hour, $p$ \cite{aws2026ec2pricing}, and convert each
+measured execution into cost with two proxies:
+\begin{align}
+  \text{P1 (time-based):}\quad & C = t_{\mathrm{wall}} \cdot v \cdot p / 3600, \label{eq:p1}\\
+  \text{P2 (resource-based):}\quad & C = t_{\mathrm{exec}} \cdot p / 3600, \label{eq:p2}
+\end{align}
+where $t_{\mathrm{wall}}$ is the wall-clock time of the execution in seconds, $v$ the number of
+vCPUs reserved for it, and $t_{\mathrm{exec}}$ the executor run time summed over all tasks
+(task-seconds). P1 corresponds to paying for a reserved machine for as long as the job runs;
+P2 charges only for the core time the tasks actually used. The two can disagree, because
+extra parallelism shortens wall-clock time while adding scheduling work to every task, so we
+report both.
+
+When $\Copt$ and $\Crun$ are expressed with the same proxy, the price $p$ cancels in
+(\ref{eq:obep}): $\Nstar$ depends only on measured times. Prices therefore matter for absolute
+cost figures and for the sensitivity analysis, but not for the break-even count itself.
+
+\subsection{One-time cost of each action}
+\textbf{A1.} The best partition count is not known in advance; in practice it is found by
+trying candidate settings. Our primary definition therefore charges A1 with the cost of a
+search: one execution under each of the $K$ candidate settings,
+\begin{equation}
+  \Copt(\mathrm{A1}) = \sum_{k=1}^{K} C\bigl(\text{run at setting } k\bigr),
+  \label{eq:copt-a1}
+\end{equation}
+treating every search execution as pure overhead. This is conservative: the search runs also
+produce pipeline output, so the true overhead is smaller. As a lower bound we also report a
+\emph{rule-based} variant in which the setting is chosen from workload features without any
+search, so that $\Copt(\mathrm{A1}) \approx 0$ and A1 pays off at the first execution whenever
+$\Delta(\mathrm{A1}) > 0$. The gap between the two variants measures what prior knowledge of
+a good setting is worth. $\Crun(\mathrm{A1})$ is the per-execution cost at the chosen setting.
+
+\textbf{A2.} $\Copt(\mathrm{A2})$ is the measured cost of the compaction job itself, which
+reads the fragmented input and writes the compacted copy. $\Crun(\mathrm{A2})$ is the cost of
+one pipeline execution over the compacted data.
+
+\subsection{Assumptions}
+The model assumes that (i) the workload's characteristics stay stable over the $N$ executions,
+so a saving measured once recurs; (ii) $N$ is known or can be estimated from the pipeline's
+schedule; (iii) compaction is not undone by new writes during the horizon; and (iv) the cost
+of evaluating the decision rule itself is negligible. In our study $N$ is a parameter of the
+model and is not physically executed; we evaluate $N \in \{1, 5, 10, 50\}$.

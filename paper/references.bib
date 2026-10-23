@@ -1,0 +1,319 @@
+% Reference list for the CAO-DF paper.
+% Source: Appendix A of literature/CAO-DF_Project_Master_Document.md.
+% DOIs, volumes, issues and pages verified against Crossref and arXiv on 2026-10-23;
+% URLs checked (HTTP 200) on the same date. Author names use initials (IEEE style).
+
+% ---------------- Theme A: Spark configuration and execution tuning ----------------
+@inproceedings{nguyen2018tuning,
+  author    = {Nguyen, N. and Khan, M. M. H. and Wang, K.},
+  title     = {Towards Automatic Tuning of {Apache Spark} Configuration},
+  booktitle = {Proc. IEEE 11th Int. Conf. Cloud Computing (CLOUD)},
+  address   = {San Francisco, CA, USA},
+  year      = {2018},
+  pages     = {417--425},
+  doi       = {10.1109/CLOUD.2018.00059}
+}
+
+@article{buchaca2020yoro,
+  author  = {Buchaca Prats, D. and Albuquerque Portella, F. and Costa, C. H. A. and Berral, J. L.},
+  title   = {You Only Run Once: {Spark} Auto-Tuning from a Single Run},
+  journal = {IEEE Trans. Netw. Service Manag.},
+  volume  = {17},
+  number  = {4},
+  pages   = {2039--2051},
+  month   = dec,
+  year    = {2020},
+  doi     = {10.1109/TNSM.2020.3034824}
+}
+
+@inproceedings{xin2022locat,
+  author    = {Xin, J. and Hwang, K. and Yu, Z.},
+  title     = {{LOCAT}: Low-Overhead Online Configuration Auto-Tuning of {Spark SQL} Applications},
+  booktitle = {Proc. Int. Conf. Management of Data (SIGMOD)},
+  address   = {Philadelphia, PA, USA},
+  year      = {2022},
+  pages     = {674--684},
+  doi       = {10.1145/3514221.3526157}
+}
+
+@article{li2023online,
+  author  = {Li, Y. and Jiang, H. and Shen, Y. and Fang, Y. and Yang, X. and Huang, D. and others},
+  title   = {Towards General and Efficient Online Tuning for {Spark}},
+  journal = {Proc. VLDB Endow.},
+  volume  = {16},
+  number  = {12},
+  pages   = {3570--3583},
+  year    = {2023},
+  doi     = {10.14778/3611540.3611548}
+}
+
+@article{lyu2024optimizer,
+  author  = {Lyu, C. and Fan, Q. and Guyard, P. and Diao, Y.},
+  title   = {A {Spark} Optimizer for Adaptive, Fine-Grained Parameter Tuning},
+  journal = {Proc. VLDB Endow.},
+  volume  = {17},
+  number  = {11},
+  pages   = {3565--3579},
+  year    = {2024},
+  doi     = {10.14778/3681954.3682021}
+}
+
+@article{li2025loftune,
+  author  = {Li, J. and Ye, J. and Mao, Y. and Gao, Y. and Chen, L.},
+  title   = {{LOFTune}: A Low-Overhead and Flexible Approach for {Spark SQL} Configuration Tuning},
+  journal = {IEEE Trans. Knowl. Data Eng.},
+  volume  = {37},
+  number  = {6},
+  pages   = {3528--3542},
+  year    = {2025},
+  doi     = {10.1109/TKDE.2025.3549232}
+}
+
+@article{herodotou2020survey,
+  author  = {Herodotou, H. and Chen, Y. and Lu, J.},
+  title   = {A Survey on Automatic Parameter Tuning for Big Data Processing Systems},
+  journal = {ACM Comput. Surv.},
+  volume  = {53},
+  number  = {2},
+  pages   = {43:1--43:37},
+  month   = apr,
+  year    = {2020},
+  doi     = {10.1145/3381027}
+}
+
+% ---------------- Theme B: Workload-aware optimization ----------------
+@inproceedings{shen2023rover,
+  author    = {Shen, Y. and Ren, X. and Lu, Y. and Jiang, H. and Xu, H. and Peng, D. and others},
+  title     = {Rover: An Online {Spark SQL} Tuning Service via Generalized Transfer Learning},
+  booktitle = {Proc. 29th ACM SIGKDD Conf. Knowledge Discovery and Data Mining (KDD)},
+  address   = {Long Beach, CA, USA},
+  year      = {2023},
+  pages     = {4800--4812},
+  doi       = {10.1145/3580305.3599953}
+}
+
+@article{xue2024aqe,
+  author  = {Xue, M. and Bu, Y. and Somani, A. and Fan, W. and Liu, Z. and Chen, S. and others},
+  title   = {Adaptive and Robust Query Execution for Lakehouses at Scale},
+  journal = {Proc. VLDB Endow.},
+  volume  = {17},
+  number  = {12},
+  pages   = {3947--3959},
+  year    = {2024},
+  doi     = {10.14778/3685800.3685818}
+}
+
+@inproceedings{parayil2025workload,
+  author    = {Parayil, A. and Zhang, J. and Qin, X. and Goiri, {\'I}. and Huang, L. and Zhu, T. and others},
+  title     = {Towards Workload-Aware Cloud Efficiency: A Large-Scale Empirical Study of Cloud Workload Characteristics},
+  booktitle = {Proc. 16th ACM/SPEC Int. Conf. Performance Engineering (ICPE)},
+  year      = {2025},
+  pages     = {136--146},
+  doi       = {10.1145/3676151.3722008}
+}
+
+@inproceedings{bao2018learning,
+  author    = {Bao, L. and Liu, X. and Chen, W.},
+  title     = {Learning-Based Automatic Parameter Tuning for Big Data Analytics Frameworks},
+  booktitle = {Proc. IEEE Int. Conf. Big Data (Big Data)},
+  address   = {Seattle, WA, USA},
+  year      = {2018},
+  pages     = {181--190},
+  doi       = {10.1109/BigData.2018.8622018}
+}
+
+% ---------------- Theme C: Data compaction and small files ----------------
+@inproceedings{gruenheid2025autocomp,
+  author    = {Gruenheid, A. and Camacho-Rodr{\'\i}guez, J. and Curino, C. and Ramakrishnan, R. and Pak, S. and Sakdeo, S. and others},
+  title     = {{AutoComp}: Automated Data Compaction for Log-Structured Tables in Data Lakes},
+  booktitle = {Companion Proc. Int. Conf. Management of Data (SIGMOD-Companion)},
+  year      = {2025},
+  pages     = {404--417},
+  doi       = {10.1145/3722212.3724430}
+}
+
+@misc{goswami2023iceberg,
+  author       = {Goswami, A. and Sarkar, R.},
+  title        = {{Apache Iceberg} Optimization: Solving the Small Files Problem in {Amazon EMR}},
+  howpublished = {AWS Big Data Blog. [Online]. Available: \url{https://aws.amazon.com/blogs/big-data/apache-iceberg-optimization-solving-the-small-files-problem-in-amazon-emr/}},
+  month        = oct,
+  year         = {2023},
+  note         = {Accessed: Oct. 23, 2026}
+}
+
+@misc{delta2025compaction,
+  author       = {{Delta Lake Project}},
+  title        = {Optimizations -- Compaction (Bin-Packing), {Delta Lake} Documentation},
+  howpublished = {[Online]. Available: \url{https://docs.delta.io/latest/optimizations-oss.html}},
+  note         = {Accessed: Oct. 23, 2026}
+}
+
+@inproceedings{venkatesan2025autocompactionai,
+  author    = {Venkatesan, V.},
+  title     = {{AutoCompactionAI}: A Reinforcement Learning Framework for Adaptive File Compaction in Serverless Data Lakes},
+  booktitle = {Proc. IEEE Int. Conf. Future Machine Learning and Data Science (FMLDS)},
+  year      = {2025},
+  pages     = {566--571},
+  doi       = {10.1109/FMLDS67896.2025.00081}
+}
+
+@article{chettaoui2025merging,
+  author  = {Chettaoui, H. and Hkiri, F.},
+  title   = {Correlation Aware Solution for Merging Small Files Based on Similarity and Clustering in {HDFS}},
+  journal = {J. Supercomput.},
+  volume  = {81},
+  number  = {15},
+  pages   = {Art. no. 1458},
+  year    = {2025},
+  doi     = {10.1007/s11227-025-07946-9}
+}
+
+@article{camacho2024lstbench,
+  author  = {Camacho-Rodr{\'\i}guez, J. and Agrawal, A. and Gruenheid, A. and Gosalia, A. and Petculescu, C. and Aguilar-Saborit, J. and others},
+  title   = {{LST-Bench}: Benchmarking Log-Structured Tables in the Cloud},
+  journal = {Proc. ACM Manag. Data},
+  volume  = {2},
+  number  = {1},
+  pages   = {1--26},
+  year    = {2024},
+  doi     = {10.1145/3639314}
+}
+
+% ---------------- Theme D: Table and data-layout optimization ----------------
+@article{meduri2026pto,
+  author  = {Meduri, V. V. and Kreismann, D. and Barber, R. and Reinwald, B.},
+  title   = {{PTO}: A Workload-Driven Predictive Table Optimizer for Lakehouse Systems},
+  journal = {Proc. ACM Manag. Data},
+  volume  = {4},
+  number  = {1},
+  pages   = {1--26},
+  year    = {2026},
+  doi     = {10.1145/3786681}
+}
+
+@article{nakandala2026autoliquid,
+  author  = {Nakandala, S. and Bhanoori, N. R. and Zhang, Y. and Negi, P. and Sharma, A. and Liang, E. and others},
+  title   = {{AutoLiquid}: Autonomic Data Layout Optimization for the {Databricks} Lakehouse},
+  journal = {Proc. VLDB Endow.},
+  volume  = {19},
+  number  = {12},
+  pages   = {4023--4035},
+  year    = {2026},
+  doi     = {10.14778/3827998.3828013}
+}
+
+@article{liu2026layoutpilot,
+  author  = {Liu, G. and Kipf, A. and Borovica-Gajic, R.},
+  title   = {{LayoutPilot}: A Lakehouse Physical Design Advisor},
+  journal = {Proc. VLDB Endow.},
+  volume  = {19},
+  number  = {12},
+  pages   = {4578--4581},
+  year    = {2026},
+  doi     = {10.14778/3827998.3828070}
+}
+
+% ---------------- Theme E: Optimization cost and break-even ----------------
+@inproceedings{fekry2020tune,
+  author    = {Fekry, A. and Carata, L. and Pasquier, T. and Rice, A. and Hopper, A.},
+  title     = {To Tune or Not to Tune? In Search of Optimal Configurations for Data Analytics},
+  booktitle = {Proc. 26th ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining (KDD)},
+  year      = {2020},
+  pages     = {2494--2504},
+  doi       = {10.1145/3394486.3403299}
+}
+
+@misc{fekry2020tuneful,
+  author       = {Fekry, A. and Carata, L. and Pasquier, T. and Rice, A. and Hopper, A.},
+  title        = {Tuneful: An Online Significance-Aware Configuration Tuner for Big Data Analytics},
+  howpublished = {arXiv preprint arXiv:2001.08002},
+  year         = {2020}
+}
+
+@inproceedings{sidhanta2016optex,
+  author    = {Sidhanta, S. and Golab, W. and Mukhopadhyay, S.},
+  title     = {{OptEx}: A Deadline-Aware Cost Optimization Model for {Spark}},
+  booktitle = {Proc. 16th IEEE/ACM Int. Symp. Cluster, Cloud and Grid Computing (CCGrid)},
+  address   = {Cartagena, Colombia},
+  year      = {2016},
+  pages     = {193--202},
+  doi       = {10.1109/CCGrid.2016.10}
+}
+
+@misc{chang2026crosslayer,
+  author       = {Chang, I.},
+  title        = {Cross-Layer Decision Timing Orchestration in Cost-Based Database Systems: Resolving Structural Temporal Misalignment},
+  howpublished = {arXiv preprint arXiv:2603.02253},
+  month        = feb,
+  year         = {2026},
+  note         = {Unpublished preprint, not peer-reviewed}
+}
+
+% ---------------- Theme F: Cost-aware cloud resource optimization ----------------
+@inproceedings{alipourfard2017cherrypick,
+  author    = {Alipourfard, O. and Liu, H. H. and Chen, J. and Venkataraman, S. and Yu, M. and Zhang, M.},
+  title     = {{CherryPick}: Adaptively Unearthing the Best Cloud Configurations for Big Data Analytics},
+  booktitle = {Proc. 14th USENIX Symp. Networked Systems Design and Implementation (NSDI)},
+  address   = {Boston, MA, USA},
+  year      = {2017},
+  pages     = {469--482}
+}
+
+@inproceedings{hsu2018micky,
+  author    = {Hsu, C.-J. and Nair, V. and Menzies, T. and Freeh, V.},
+  title     = {Micky: A Cheaper Alternative for Selecting Cloud Instances},
+  booktitle = {Proc. IEEE 11th Int. Conf. Cloud Computing (CLOUD)},
+  address   = {San Francisco, CA, USA},
+  year      = {2018},
+  pages     = {409--416},
+  doi       = {10.1109/CLOUD.2018.00058}
+}
+
+@inproceedings{yadwadkar2017paris,
+  author    = {Yadwadkar, N. J. and Hariharan, B. and Gonzalez, J. E. and Smith, B. and Katz, R. H.},
+  title     = {Selecting the Best {VM} Across Multiple Public Clouds: A Data-Driven Performance Modeling Approach},
+  booktitle = {Proc. Symp. Cloud Computing (SoCC)},
+  address   = {Santa Clara, CA, USA},
+  year      = {2017},
+  pages     = {452--465},
+  doi       = {10.1145/3127479.3131614}
+}
+
+@inproceedings{mohapatra2023smartpick,
+  author    = {{Das Mohapatra}, A. and Oh, K.},
+  title     = {Smartpick: Workload Prediction for Serverless-Enabled Scalable Data Analytics Systems},
+  booktitle = {Proc. 24th Int. Middleware Conf. (Middleware)},
+  year      = {2023},
+  pages     = {29--42},
+  doi       = {10.1145/3590140.3592850}
+}
+
+% ---------------- Software and documentation used in the methodology ----------------
+@misc{spark2024tuning,
+  author       = {{The Apache Software Foundation}},
+  title        = {Performance Tuning -- {Spark SQL} 3.5 Documentation},
+  howpublished = {[Online]. Available: \url{https://spark.apache.org/docs/3.5.6/sql-performance-tuning.html}},
+  note         = {Accessed: Oct. 23, 2026}
+}
+
+@misc{spark2024config,
+  author       = {{The Apache Software Foundation}},
+  title        = {Configuration -- {Spark} 3.5 Documentation},
+  howpublished = {[Online]. Available: \url{https://spark.apache.org/docs/3.5.6/configuration.html}},
+  note         = {Accessed: Oct. 23, 2026}
+}
+
+@misc{canali2024sparkmeasure,
+  author       = {Canali, L.},
+  title        = {{sparkMeasure}: A Tool for Performance Troubleshooting of {Apache Spark} Workloads},
+  howpublished = {[Online]. Available: \url{https://github.com/LucaCanali/sparkMeasure}},
+  note         = {Version 0.28. Accessed: Oct. 23, 2026}
+}
+
+@misc{aws2026ec2pricing,
+  author       = {{Amazon Web Services}},
+  title        = {{Amazon EC2} On-Demand Pricing},
+  howpublished = {[Online]. Available: \url{https://aws.amazon.com/ec2/pricing/on-demand/}},
+  year         = {2026},
+  note         = {\textcolor{red}{[TBD: region, instance type, accessed date -- fixed in Phase 8]}}
+}

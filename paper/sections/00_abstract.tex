@@ -1,0 +1,19 @@
+\begin{abstract}
+Optimizing an Apache Spark pipeline is not free: tuning execution parameters or compacting
+small files itself consumes compute that must be recovered by future executions. We present
+CAO-DF, a lightweight and interpretable cost-benefit framework that decides, for a given
+workload and an expected number of future runs, whether to keep a static configuration, tune
+the number of shuffle partitions, or compact the input files. The decision rests on an explicit
+total-cost model and an optimization break-even point. We evaluate it in a controlled local
+study of seeded synthetic workloads that vary data volume, file fragmentation and shuffle
+volume, using a randomized-block protocol with 250 measured executions.
+\tbd{A1 finding with numbers}. \tbd{A2 finding with numbers}. \tbd{Break-even finding}.
+On \tbd{Z} unseen workloads the framework reduces estimated total cost by \tbd{Y\%} relative
+to the static configuration while avoiding \tbd{W} unprofitable optimizations. Costs are
+estimated from published cloud pricing, not billed, and all experiments run on a single machine.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Apache Spark, cost-aware optimization, break-even analysis, shuffle partitions,
+file compaction, data pipelines, lakehouse, workload characterization
+\end{IEEEkeywords}

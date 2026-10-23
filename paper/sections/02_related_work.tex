@@ -1,0 +1,81 @@
+\section{Related Work}
+\label{sec:related}
+
+\textbf{Spark configuration tuning.} Automatic tuning of Spark is a mature field. Approaches
+include machine-learned performance models \cite{nguyen2018tuning}, tuning from a single
+profiling run \cite{buchaca2020yoro}, low-overhead online tuning of Spark SQL
+\cite{xin2022locat}, general online tuning under multiple goals and constraints
+\cite{li2023online}, fine-grained stage-level tuning integrated with adaptive query execution
+\cite{lyu2024optimizer}, and explicit trade-offs between tuning overhead and flexibility
+\cite{li2025loftune}. The survey by Herodotou \emph{et al.}~\cite{herodotou2020survey} names
+cost-aware, workload-adaptive tuning as an open direction. In this line of work the objective
+is execution performance, and the cost of tuning is something to reduce, not a quantity to
+weigh against the number of future executions.
+
+\textbf{Workload-aware optimization.} Workload characteristics are widely used to guide
+optimization: transfer learning across workloads \cite{shen2023rover}, runtime statistics in
+adaptive execution for lakehouses \cite{xue2024aqe}, large-scale characterization of cloud
+workloads \cite{parayil2025workload}, and learning-based parameter recommendation
+\cite{bao2018learning}. These systems use workload features to find a faster configuration
+sooner; they do not decide whether optimizing is worthwhile at all.
+
+\textbf{Compaction and small files.} AutoComp \cite{gruenheid2025autocomp} automates compaction
+for log-structured tables in production data lakes and explicitly balances its benefit against
+its cost, which makes it the closest prior work on compaction economics. Practitioner sources
+describe compaction mechanisms and best practice for Iceberg and Delta Lake
+\cite{goswami2023iceberg,delta2025compaction} without a controlled evaluation of when compaction
+pays off. LST-Bench \cite{camacho2024lstbench} benchmarks log-structured tables over time,
+including table maintenance, but measures rather than decides. Recent work applies
+reinforcement learning to compaction policy \cite{venkatesan2025autocompactionai} and improves
+how small files are merged in HDFS \cite{chettaoui2025merging}.
+
+\textbf{Table and data-layout optimization.} PTO \cite{meduri2026pto} predicts, with learned
+models over workload telemetry, whether a layout optimization will help before it is applied,
+at lakehouse-catalog scale; it is the closest related work overall. AutoLiquid
+\cite{nakandala2026autoliquid} automates data-layout optimization in the Databricks lakehouse,
+and LayoutPilot \cite{liu2026layoutpilot} is a physical-design advisor for lakehouse tables.
+These systems confirm a move toward workload-driven layout decisions, but none of them states
+the decision as a break-even over the future executions of a recurring pipeline.
+
+\textbf{Optimization cost and break-even analysis.} Fekry \emph{et al.}
+\cite{fekry2020tune,fekry2020tuneful} show that whether configuration tuning is worthwhile
+depends on how often a workload will be executed, and propose amortizing tuning cost over
+future runs; this is the principle our study builds on. OptEx \cite{sidhanta2016optex} gives a
+closed-form cost and time model for choosing a Spark cluster composition under a deadline, for
+a single job rather than for recurring optimization decisions. A recent preprint
+\cite{chang2026crosslayer}, not yet peer-reviewed, applies a measurement-driven break-even point
+to hardware-offload decisions in database systems, which suggests that the mechanism transfers
+across domains.
+
+\textbf{Cost-aware cloud resource selection.} CherryPick \cite{alipourfard2017cherrypick},
+Micky \cite{hsu2018micky}, PARIS \cite{yadwadkar2017paris} and Smartpick
+\cite{mohapatra2023smartpick} select cloud instances, virtual machines or serverless versus
+VM deployments for analytics workloads. They decide which \emph{resources} to provision; we
+decide whether to apply a \emph{pipeline-level optimization} to an already provisioned Spark
+pipeline. The two decisions are complementary.
+
+\textbf{Positioning.} Table~\ref{tab:positioning} summarizes how this study differs from the
+closest work. In short, prior systems automate one optimization category, often with learned
+predictors and at production scale; we evaluate, in a controlled setting, a single explicit
+break-even rule across an execution-level action and a storage-level action.
+
+\begin{table}[t]
+\caption{Positioning against the closest related work}
+\label{tab:positioning}
+\centering
+\footnotesize
+\begin{tabular}{@{}p{0.22\columnwidth}p{0.33\columnwidth}p{0.35\columnwidth}@{}}
+\toprule
+\textbf{Work} & \textbf{What it does} & \textbf{How this study differs} \\
+\midrule
+PTO \cite{meduri2026pto} & Learned predictor of layout-optimization benefit at catalog scale
+  & Explicit cost rule; controlled study; two action types \\
+AutoComp \cite{gruenheid2025autocomp} & Production compaction balancing benefit and cost
+  & Compaction is one of two controlled actions \\
+Fekry \emph{et al.} \cite{fekry2020tune} & Break-even view of general configuration tuning
+  & Applies it jointly to an execution and a storage action \\
+OptEx \cite{sidhanta2016optex} & Cost model for cluster sizing under a deadline
+  & Decides \emph{whether} to optimize over recurring runs \\
+\bottomrule
+\end{tabular}
+\end{table}

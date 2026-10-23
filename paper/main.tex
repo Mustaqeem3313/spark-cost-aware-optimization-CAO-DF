@@ -1,0 +1,57 @@
+% CAO-DF paper -- IEEE conference format (IEEEtran).
+% Build: see paper/README.md. Every number in the Results must be regenerable from results/.
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{url}
+\def\UrlBreaks{\do\/\do-\do.\do_}
+
+% Drafting marker: every \tbd must be resolved before submission.
+\newcommand{\tbd}[1]{\textcolor{red}{[TBD: #1]}}
+
+% Fixed notation (keep identical across all sections).
+\newcommand{\Copt}{C_{\mathrm{opt}}}
+\newcommand{\Crun}{C_{\mathrm{run}}}
+\newcommand{\Cstatic}{C_{\mathrm{run}}^{\mathrm{static}}}
+\newcommand{\Nstar}{N^{*}}
+
+\begin{document}
+
+\title{A Cost-Aware Decision Framework for Adaptive Optimization of Apache Spark Data Pipelines}
+
+\author{\IEEEauthorblockN{Mustaqeem Shaikh}
+\IEEEauthorblockA{\textit{\tbd{Department}} \\
+\textit{\tbd{Institution}}\\
+\tbd{City, Country} \\
+\tbd{email}}
+% \and
+% \IEEEauthorblockN{\tbd{Guide name -- confirm co-authorship}}
+% \IEEEauthorblockA{...}
+}
+
+\maketitle
+
+\input{sections/00_abstract}
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_problem_cost_model}
+\input{sections/04_framework}
+\input{sections/05_methodology}
+\input{sections/06_results}
+\input{sections/07_discussion}
+\input{sections/08_threats}
+\input{sections/09_conclusion}
+\input{sections/10_backmatter}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,75 @@
+\section{Introduction}
+\label{sec:intro}
+
+Apache Spark is a widely used engine for batch data pipelines in cloud data platforms, and
+many such pipelines are \emph{recurring}: the same job runs every hour, day or week over
+fresh data. Spark exposes many optimization mechanisms for such pipelines, from execution
+parameters such as the number of shuffle partitions to storage-level maintenance such as
+compacting many small files into fewer large ones. A substantial body of research automates
+these mechanisms, either by searching the configuration space of the engine
+\cite{nguyen2018tuning,xin2022locat,lyu2024optimizer,herodotou2020survey} or by deciding how
+tables should be laid out and maintained \cite{gruenheid2025autocomp,meduri2026pto}.
+
+Optimization, however, is not free. Searching for a better shuffle-partition setting requires
+executing the pipeline under candidate settings, and compaction is itself a Spark job that
+reads and rewrites the data. An action that makes one execution faster is therefore not
+automatically economical: its one-time cost must be recovered by the savings of the executions
+that follow. Whether that happens depends on the size of the saving, on the cost of the action,
+and on how many times the pipeline will run again. A pipeline that runs once should rarely be
+tuned; a pipeline that runs thousands of times almost always should. Between those extremes,
+the decision is often made without an explicit cost comparison, for example by leaving Spark's
+defaults in place or by applying an optimization unconditionally.
+
+Prior work has established each ingredient of a better answer in isolation. Spark tuners treat
+their own overhead as a search-efficiency cost to be minimized rather than as a term to be
+recovered \cite{xin2022locat,li2025loftune}. Workload characteristics are an accepted signal for
+optimization \cite{shen2023rover,parayil2025workload}. Recent lakehouse systems weigh the benefit
+of compaction or layout changes against their cost at production scale
+\cite{gruenheid2025autocomp,meduri2026pto,nakandala2026autoliquid}, and Fekry
+\emph{et al.}~\cite{fekry2020tune} showed that, for general configuration tuning, the tuning
+cost must be amortized over future executions. What is missing is a controlled, empirical
+evaluation that applies this break-even principle \emph{jointly} to two different categories
+of Spark optimization (an execution-level action and a storage-level action) under one
+explicit, interpretable decision rule, and that identifies the workload conditions and
+execution frequencies at which each action becomes economically justified.
+
+This paper addresses that gap with CAO-DF, a Cost-Aware Optimization Decision Framework. Given
+a workload's characteristics and the expected number of future executions $N$, CAO-DF chooses
+among three outcomes: keep the static configuration, tune the number of shuffle partitions
+(action A1), or compact the input files (action A2). It does so by comparing total costs of
+the form $\Copt + N \cdot \Crun$ and reporting the optimization break-even point (OBEP), the
+smallest $N$ at which an action pays for itself. We do not claim that Spark tuning,
+workload-aware optimization, adaptive layout or cloud cost optimization are new; our
+contribution is the focused empirical evaluation of when two existing actions pay for
+themselves. We study three research questions:
+\begin{itemize}
+  \item \textbf{RQ1:} How do data volume, file fragmentation, shuffle volume and execution
+        frequency affect the cost and performance benefits of shuffle-partition tuning and
+        file compaction?
+  \item \textbf{RQ2:} Can a workload-aware cost-benefit framework reduce total workload cost
+        compared with a static Spark configuration?
+  \item \textbf{RQ3:} Under what workload conditions does applying shuffle-partition tuning or
+        file compaction become economically justified?
+\end{itemize}
+
+\noindent The contributions of this paper are:
+\begin{enumerate}
+  \item a simple, interpretable cost-benefit decision framework for two Spark optimization
+        actions of different kinds, with an explicit break-even criterion;
+  \item an empirical characterization, from 250 measured executions under a randomized-block
+        protocol, of how data volume, file fragmentation and shuffle volume affect the value
+        of each action;
+  \item a quantitative break-even analysis linking measured optimization overhead to future
+        savings, with a sensitivity analysis over price and cost proxy; and
+  \item practical guidance on when to apply an optimization and when to keep the static
+        pipeline, together with a public, reproducible artifact.
+\end{enumerate}
+
+\tbd{One or two sentences stating the headline results with numbers, after Phases 8--10.}
+
+The rest of the paper is organized as follows. Section~\ref{sec:related} reviews related work.
+Section~\ref{sec:problem} defines the problem and the cost model, and
+Section~\ref{sec:framework} presents the decision framework. Section~\ref{sec:method}
+describes the experimental methodology, Section~\ref{sec:results} reports the results, and
+Section~\ref{sec:discussion} discusses them. Section~\ref{sec:threats} states the threats to
+validity, and Section~\ref{sec:conclusion} concludes.

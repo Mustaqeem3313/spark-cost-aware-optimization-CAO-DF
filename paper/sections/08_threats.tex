@@ -1,0 +1,49 @@
+\section{Threats to Validity}
+\label{sec:threats}
+
+\textbf{External validity.} All measurements come from a single laptop running Spark in local
+mode. There is no network shuffle and no cluster scheduling, so absolute times do not carry
+over to production clusters. The break-even reasoning and the relative effects of the actions
+are what we expect to carry over, and the framework itself consumes measured or estimated
+costs rather than fixed constants. The datasets are small (at most 28\,MB on disk and 35\,MB
+shuffled); with larger data the best partition count will grow, and our specific optima should
+not be reused as settings. The data are synthetic, and the profiled workloads use a single
+data seed; to limit this threat, the validation workloads use different seeds and a volume not
+seen during profiling.
+
+\textbf{Platform effects.} The experiments run on Windows with NTFS, where creating many small
+files is comparatively expensive. This amplifies the overhead of Spark's bypass-merge shuffle
+writer, which Spark uses when a shuffle has no map-side aggregation and at most 200 reduce
+partitions
+(\texttt{spark.shuffle.sort.bypassMergeThreshold} \cite{spark2024config}) and which writes one
+file per reduce partition for every map task. It contributes to
+both the size of the A1 effect and the mechanism behind A2. On Linux, HDFS or object storage we
+expect the effects to be smaller, but we have no reason to expect them to reverse. The hybrid
+processor (performance and efficiency cores) caused occasional slow executions at 1--2
+partitions, raising the coefficient of variation above 0.20 in 5 of the 32 A1 cells. We report
+these cells as measured, and a sensitivity analysis that removes the slowest execution of each
+flagged cell leaves the conclusions unchanged.
+
+\textbf{Internal validity.} Disabling AQE and broadcast joins was necessary to control the
+partition count and to force a shuffle, but it departs from Spark's defaults; AQE in particular
+would reduce the benefit of manual partition tuning. The A2 benefit is partly an interaction
+with the static setting of 200 shuffle partitions: fragmented input produces more map tasks,
+and each of them writes 200 shuffle files. Because the design measures each action alone, the
+joint effect of A1 and A2 is not quantified. In A2 the warm-up executions leave input files in
+the operating system's cache, so the measured benefit of compaction is a lower bound for cold
+reads from remote storage. We mitigated systematic drift with session warm-ups, a discarded
+warm-up before every measured execution, randomized block order with fixed seeds, and
+pre-flight checks on free memory and power supply.
+
+\textbf{Construct validity.} Costs are estimated from published on-demand prices and are never
+billed. Proxy P1 assumes the whole machine is paid for while the job runs, whereas P2 charges
+only the core time that tasks use; neither includes storage, data-transfer or licence costs.
+We therefore report both proxies and vary the price by $\pm 50\,\%$. The number of future
+executions $N$ is a model parameter and is not physically executed, so the model assumes the
+measured saving recurs unchanged. Charging the A1 search entirely as overhead overstates its
+one-time cost; the rule-based variant bounds it from below.
+
+\textbf{Conclusion validity.} With five blocks per cell, rank-based significance tests have
+little power, so we rely on medians, interquartile ranges, the consistency of the paired
+savings across blocks, and bootstrap confidence intervals. Differences smaller than the noise
+floor are treated as ties rather than as effects.

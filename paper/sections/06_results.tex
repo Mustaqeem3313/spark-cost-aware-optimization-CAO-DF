@@ -1,0 +1,21 @@
+\section{Results}
+\label{sec:results}
+
+\tbd{Drafted after Phase 10. Planned structure:}
+
+\subsection{A1: shuffle-partition tuning}
+\tbd{Partition curves per workload (wall-clock and executor time); default 200 slowest on every
+workload; best setting 7.9--11.3$\times$ faster; optimum 1--4 partitions, growing with volume;
+400 faster than 200 (bypass-merge threshold); plateau of equivalent settings; zero spill.}
+
+\subsection{A2: file compaction}
+\tbd{Before/after per workload; benefit 66\,\% (small, 10/50 files), 24.6\,\% and 32.3\,\%
+(large, 10/50 files), within noise for single-file inputs; saturation between 10 and 50 files;
+compaction cost 0.18--1.29\,s.}
+
+\subsection{Break-even points}
+\tbd{Phase 8: $\Nstar$ per workload and action, both proxies, search-based and rule-based A1
+cost; total-cost curves for $N \in \{1, 5, 10, 50\}$; price sensitivity.}
+
+\subsection{Framework validation}
+\tbd{Phase 9: decisions on unseen workloads, cost versus static baseline; verdicts for H1--H3.}
