@@ -1,140 +1,96 @@
-\section{Experimental Methodology}
+\section{Experimental Setup}
 \label{sec:method}
 
-The experiments are designed to measure $\Crun$ and $\Copt$ for each action under controlled
-variation of the workload features, with enough repetition to separate effects from noise.
-
 \subsection{Environment}
-All experiments run on one laptop in Spark local mode (Table~\ref{tab:env}). Executors run
-inside the driver JVM, so the study measures single-machine, multi-threaded execution. Two
-Spark features are disabled to isolate the effects under study \cite{spark2024tuning}. Adaptive Query Execution
-(AQE) is off because it coalesces shuffle partitions at run time and would override the A1
-setting. Broadcast joins are off so that the join is executed as a sort-merge join and both
-inputs are really shuffled. Every requested setting is read back from the running session
-and the run is aborted on a mismatch.
+All runs used one laptop (Table~\ref{tab:env}) with Spark in local mode. Adaptive query
+execution (AQE) was switched off and broadcast joins were disabled, so that the shuffle
+partition setting is used exactly as given \cite{spark2024tuning}. Metrics were collected with
+sparkMeasure \cite{canali2024sparkmeasure}.
 
 \begin{table}[t]
-\caption{Study environment}
+\caption{Hardware and Software Environment}
 \label{tab:env}
 \centering
-\footnotesize
-\begin{tabular}{@{}ll@{}}
+\small
+\begin{tabular}{@{}lp{0.7\columnwidth}@{}}
 \toprule
-\textbf{Component} & \textbf{Value} \\
+Item & Value \\
 \midrule
-CPU & Intel i5-1335U, 10 cores (2P+8E), 12 threads \\
-Memory / storage & 15.7 GB RAM / NVMe SSD \\
+CPU & Intel Core i5-1335U (10 cores, 12 threads) \\
+Memory / disk & 15.7\,GB RAM / NVMe SSD \\
 OS & Windows 11 \\
-Software & Python 3.11.9, JDK 17, PySpark 3.5.1 \\
-Instrumentation & sparkMeasure 0.28 \cite{canali2024sparkmeasure}, psutil \\
-Spark mode & \texttt{local[*]}, driver memory 3 GB \\
-Fixed settings & AQE off; broadcast join threshold $-1$ \\
+Software & Python 3.11.9, JDK 17, PySpark 3.5.1, sparkMeasure 0.28 \\
+Spark & \texttt{local[*]}, driver memory 3\,GB, AQE off, broadcast join threshold $-1$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Workloads}
-A seeded generator produces two tables: \texttt{orders} (order id, customer id, product
-category, amount, order date) and \texttt{customers} (customer id, region, segment), stored as
-Parquet. Three factors are varied. \emph{Data volume} is small (50\,000 orders) or large
-(2\,000\,000 orders), with $\max(500, \lfloor\text{orders}/100\rfloor)$ customers.
-\emph{Shuffle volume} is controlled through the fraction of orders that pass the pipeline's
-filter: about 15\,\% (low) or 85\,\% (high). \emph{Fragmentation} is the number of Parquet
-files holding \texttt{orders}: 1 (low), 10 (medium) or 50 (high). Table~\ref{tab:workloads}
-lists the ten workloads; all use data seed 42. The A1 workloads fix fragmentation at 10 files
-and vary volume and shuffle level; the A2 workloads fix the shuffle level at high and vary
-volume and fragmentation. Before the experiments we checked that the factors really change the
-amount of data shuffled: at the static setting the median shuffle volume ranges from 0.34\,MB
-(small, low) to 34.8\,MB (large, high), and no run spilled to memory or disk.
+\subsection{Pipeline and workloads}
+The pipeline is a typical batch job on Parquet data: it filters orders with a positive amount,
+joins them with a customer table (sort-merge join), and aggregates per customer, region and
+product category.
+It has two shuffle exchanges and writes to a no-op sink, so that output writing does not
+affect the times. A synthetic generator creates the data. Three features are varied: data
+volume (number of orders), file fragmentation (number of input files) and shuffle volume (the
+share of orders that pass the filter, 15\,\% or 85\,\%). Table~\ref{tab:workloads} lists all
+workloads. The study workloads use seed 42; the four validation workloads use new seeds and
+feature values that were not measured before, including a medium volume of 500K orders.
 
 \begin{table}[t]
-\caption{Workloads (data seed 42)}
+\caption{Workloads (Orders, Input Files, Share of Rows Shuffled, Size)}
 \label{tab:workloads}
 \centering
-\footnotesize
-\begin{tabular}{@{}lrrrc@{}}
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}llrrrr@{}}
 \toprule
-\textbf{Workload} & \textbf{Orders} & \textbf{Files} & \textbf{MB} & \textbf{Shuffle} \\
+Use & Workload & Orders & Files & Shuffled & MB \\
 \midrule
-A1\_small\_low    & 50\,000      & 10 & 0.59  & low \\
-A1\_small\_high   & 50\,000      & 10 & 0.59  & high \\
-A1\_large\_low    & 2\,000\,000  & 10 & 20.84 & low \\
-A1\_large\_high   & 2\,000\,000  & 10 & 25.31 & high \\
+\multirow{4}{*}{A1} & small\_low   & 50K & 10 & 15\,\% & 0.59 \\
+                    & small\_high  & 50K & 10 & 85\,\% & 0.59 \\
+                    & large\_low   & 2M  & 10 & 15\,\% & 20.84 \\
+                    & large\_high  & 2M  & 10 & 85\,\% & 25.31 \\
 \midrule
-A2\_small\_low    & 50\,000      & 1  & 0.55  & high \\
-A2\_small\_medium & 50\,000      & 10 & 0.59  & high \\
-A2\_small\_high   & 50\,000      & 50 & 0.77  & high \\
-A2\_large\_low    & 2\,000\,000  & 1  & 23.31 & high \\
-A2\_large\_medium & 2\,000\,000  & 10 & 25.31 & high \\
-A2\_large\_high   & 2\,000\,000  & 50 & 27.89 & high \\
+\multirow{2}{*}{A2} & small        & 50K & 1/10/50 & 85\,\% & 0.55--0.77 \\
+                    & large        & 2M  & 1/10/50 & 85\,\% & 23.31--27.89 \\
+\midrule
+\multirow{4}{*}{Valid.} & V1 & 500K & 1  & 85\,\% & 5.71 \\
+                        & V2 & 500K & 25 & 50\,\% & 6.45 \\
+                        & V3 & 50K  & 25 & 15\,\% & 0.65 \\
+                        & V4 & 2M   & 5  & 50\,\% & 21.57 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Pipeline}
-The pipeline filters \texttt{orders} on a positive amount, joins the result with
-\texttt{customers} on the customer id, and aggregates by customer, region and product
-category (sum, count and mean of the amount). The physical plan contains two shuffle
-exchanges, one per join input; the aggregation reuses the join's hash partitioning. Each
-execution writes its result to Spark's \texttt{noop} sink, which runs the full plan without
-producing output files, so that no write cost is mixed into the measurement and no aggregate
-column can be pruned. An earlier version of the pipeline, with a broadcast join and a
-low-cardinality aggregation, shuffled about 10\,KB regardless of the workload; it was
-discarded because no workload factor could influence its shuffle cost.
+\subsection{Experiments}
+\textbf{E1--E4 (A1, partition tuning).} Each A1 workload was run with 1, 2, 4, 8, 16, 50, 200
+and 400 shuffle partitions. The input was cached in memory so that only the shuffle changes
+between settings. 160 runs.
 
-\subsection{Actions and protocol}
-\textbf{A1.} The partition count takes the values $\{1, 2, 4, 8, 16, 50, 200, 400\}$, chosen
-from an exploratory sweep to span under-partitioned, near-core-count, default and
-over-partitioned settings; 200 is the static baseline. Each of the 32 workload--setting cells
-is measured in 5 repetition blocks, giving 160 measured executions. Input tables are cached
-once, untimed, before measurement, so that the timed executions reflect computation and
-shuffle rather than repeated Parquet reads. Every cell is executed once, untimed, as a session
-warm-up. Within each block the cell order is shuffled with a fixed seed (123), and every
-measured execution is preceded by one discarded warm-up execution.
+\textbf{E5 (A2, compaction).} Each A2 workload was run before and after compaction at 200
+partitions. Compaction rewrites the input into $\lceil \text{size}/128\,\text{MB} \rceil = 1$
+file. The input was not cached, because compaction changes how files are read. Each block
+runs three stages in order: the fragmented run, the compaction job and the compacted run.
+90 runs, including 30 timed compaction jobs.
 
-\textbf{A2.} Compaction reads the fragmented \texttt{orders} files and rewrites them, using
-\texttt{coalesce}, into $\lceil \text{size}/128\,\text{MB}\rceil$ files in a new location; at
-our data sizes this yields one file. Coalescing merges partitions without a full shuffle,
-which mirrors bin-packing compaction. In every block, each workload is measured in a fixed
-sequence: one pipeline execution on the fragmented data (\emph{before}), the compaction job
-($\Copt$), and one pipeline execution on the compacted data (\emph{after}). The six workloads
-are measured in 5 blocks (90 measured executions), with the workload order shuffled per block
-(seed 456). Inputs are \emph{not} cached, because the cost of listing, opening and scanning
-many files is exactly what compaction removes. Shuffle partitions stay at the static value of
-200, so A2 is measured separately from A1. All three stages of every workload are executed
-once, untimed, as a session warm-up; each measured stage is preceded by a discarded warm-up; and
-the saving is computed per block from the paired before and after executions.
+\textbf{E6 (validation).} Each validation workload was run with all eight partition settings
+in random order, then compacted, then run once on the compacted data, without caching.
+120 runs.
 
-\textbf{Run hygiene.} Before each session a pre-flight check requires at least 3.5\,GB of free
-memory and mains power, and other applications are closed.
+\textbf{Protocol.} Runs were grouped into blocks; within a block every cell is run once, and
+the order of workloads (and, for A1 and E6, of partition settings) is shuffled again in every
+block (seeds 123, 456 and 789). A1 and A2 used 5 blocks and E6 used 3. Every cell was first run
+once without timing, and every measured run was preceded by one discarded warm-up run. In
+total, 370 runs were measured.
 
-\subsection{Metrics}
-For every execution we record the wall-clock time of the Spark action (Python
-\texttt{perf\_counter}); the stage metrics collected by sparkMeasure
-\cite{canali2024sparkmeasure}, including executor run time, executor CPU time, shuffle bytes
-read and written, memory and disk spill, garbage-collection time, and the numbers of stages
-and tasks; and the system CPU and memory utilization sampled with psutil. Results are appended
-to a single CSV file whose header is checked on every write, and every row carries the
-pipeline version.
-
-\subsection{Cost estimation and validation}
-Per-execution costs are derived from the measurements with proxies P1 and P2
-(Section~\ref{sec:problem}) at the EC2 on-demand price of USD 0.0505 per vCPU-hour (m6i
-instances, Linux, Asia Pacific (Mumbai) region, accessed 23 October 2026)
-\cite{aws2026ec2pricing}. Under P1 the study machine is charged as 12 vCPUs, one per task slot;
-the price only converts time into money and does not imply that the laptop performs like an
-m6i instance. Every per-execution cost is the median over the repetitions of its cell.
-Break-even points are computed for $N \in \{1, 5, 10, 50\}$, and a
-sensitivity analysis varies the price by $\pm 50\,\%$ and swaps the proxy. To answer RQ2, the
-framework is applied to \tbd{number} unseen validation workloads, generated with different
-seeds and an intermediate volume of 500\,000 orders, and its total estimated cost is compared
-with that of the static configuration for each $N$.
-
-\subsection{Analysis}
-We report medians and interquartile ranges per cell, speed-ups relative to the static setting,
-and paired per-block savings for A2. Cells with a coefficient of variation above 0.20 are
-flagged and inspected. Outliers are reported, never silently removed; as a sensitivity check
-we repeat the A1 analysis with the slowest execution of each flagged cell removed. With five
-blocks, an exact two-sided Wilcoxon signed-rank test cannot reach $p < 0.0625$, so we base
-conclusions on effect sizes and bootstrap 95\,\% confidence intervals rather than on
-significance tests.
+\subsection{Metrics and analysis}
+For each run we recorded the wall-clock time, the summed executor run time, shuffle bytes and
+spilled bytes. Each setting is summarized by its median over blocks, with the interquartile
+range (IQR) and the coefficient of variation (CV); a cell with CV above 0.2 is marked as noisy.
+Times were turned into costs with (\ref{eq:p1})--(\ref{eq:p2}), using the on-demand price of
+an Amazon EC2 m6i instance in the Mumbai region, \$0.0505 per vCPU-hour (accessed 23 Oct 2026)
+\cite{aws2026ec2pricing}, and $v = 12$ vCPUs for P1. With only 5 blocks, a Wilcoxon
+signed-rank test cannot reach $p < 0.0625$, so we report medians, effect sizes and bootstrap
+95\,\% confidence intervals instead of $p$-values. To check robustness, we repeated the
+analysis with the price halved and increased by half (P1 and P2), and with the slowest run of
+each noisy cell removed.

@@ -1,19 +1,21 @@
 \begin{abstract}
-Optimizing an Apache Spark pipeline is not free: tuning execution parameters or compacting
-small files itself consumes compute that must be recovered by future executions. We present
-CAO-DF, a lightweight and interpretable cost-benefit framework that decides, for a given
-workload and an expected number of future runs, whether to keep a static configuration, tune
-the number of shuffle partitions, or compact the input files. The decision rests on an explicit
-total-cost model and an optimization break-even point. We evaluate it in a controlled local
-study of seeded synthetic workloads that vary data volume, file fragmentation and shuffle
-volume, using a randomized-block protocol with 250 measured executions.
-\tbd{A1 finding with numbers}. \tbd{A2 finding with numbers}. \tbd{Break-even finding}.
-On \tbd{Z} unseen workloads the framework reduces estimated total cost by \tbd{Y\%} relative
-to the static configuration while avoiding \tbd{W} unprofitable optimizations. Costs are
-estimated from published cloud pricing, not billed, and all experiments run on a single machine.
+Making an Apache Spark pipeline faster is not free. Searching for a better number of shuffle
+partitions means running the job several times, and compacting small input files is itself a
+Spark job. Such an action only saves money if the pipeline runs often enough afterwards to
+recover its one-time cost. We present CAO-DF, a simple rule that decides, for a workload and an
+expected number of future runs $N$, whether to keep the default configuration, tune shuffle
+partitions, or compact the input files. It compares total costs and the break-even point of
+each action. In 250 measured runs on synthetic workloads, the best partition count was
+7.9--11.3$\times$ faster than Spark's default of 200, and compaction cut run time by
+25--66\,\% on fragmented input but did nothing for single-file input. A full partition search
+paid for itself within three runs, and compaction after one. On four unseen workloads CAO-DF
+lowered estimated total cost by 47\,\% on average (95\,\% CI 30.5--62.3\,\%), lost to the default
+in 2 of 16 cases, and avoided the losses of a speed-only strategy when $N = 1$. All costs are
+estimated from cloud prices, and all runs use one laptop.
 \end{abstract}
 
 \begin{IEEEkeywords}
 Apache Spark, cost-aware optimization, break-even analysis, shuffle partitions,
-file compaction, data pipelines, lakehouse, workload characterization
+file compaction, data pipelines
 \end{IEEEkeywords}
+

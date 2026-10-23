@@ -1,6 +1,17 @@
 \section{Conclusion and Future Work}
 \label{sec:conclusion}
 
-\tbd{Drafted last: summary of contributions and headline results. Future work: a joint A1+A2
-action, AQE as an additional action, cluster and cloud-storage validation, larger data, and
-measured rather than estimated costs.}
+We asked when two common Spark optimizations, shuffle-partition tuning and file compaction,
+are worth their one-time cost. In 250 controlled runs, the default of 200 partitions was the
+slowest setting on every workload, and a full search for a better value paid for itself after
+three runs. Compaction paid for itself at the first run on fragmented input and never on
+single-file input. CAO-DF, a simple break-even rule with a noise floor, used these measurements
+to choose between doing nothing, tuning and compacting. On four unseen workloads it lowered
+estimated total cost by 47\,\% (P1) and 72\,\% (P2) on average, came close to a hindsight
+oracle, and avoided the losses of a speed-only strategy for one-off jobs. The main lesson is
+that the number of future runs should be part of every optimization decision.
+
+Future work should (1) apply tuning and compaction together, (2) repeat the study with adaptive
+query execution enabled, (3) run on a real cluster with cloud storage and larger data, (4) use
+billed rather than estimated costs, and (5) add workload features that explain when compaction
+saves wall-clock time and not only task time.

@@ -1,72 +1,54 @@
-\section{The CAO-DF Decision Framework}
+\section{The CAO-DF Decision Rule}
 \label{sec:framework}
 
-CAO-DF turns the cost model of Section~\ref{sec:problem} into a decision procedure. It is
-deliberately rule-based: every decision can be traced to a measured saving, a measured one-time
-cost and the expected number of executions, and no learned model is involved.
+CAO-DF turns the cost model into a decision. It uses no machine learning: every decision can
+be traced back to a measured saving, a measured one-time cost and the value of $N$.
 
-\subsection{Inputs and outputs}
-The framework takes (i) the features of a workload $w$ (data volume, number of input files and
-shuffle volume), (ii) the expected number of future executions $N$, and (iii) a cost table of
-$\Cstatic$, $\Crun(a)$ and $\Copt(a)$ for a set of profiled reference workloads. It returns
-one of three decisions: \emph{keep static}, \emph{tune} (A1, with a partition count) or
-\emph{compact} (A2), together with the estimated total cost of each option and the break-even
-point of each action.
+\textbf{Inputs and output.} The rule takes the features of a new workload $w$, the expected
+number of runs $N$, and a table of measured \emph{reference} workloads. For every reference
+workload and action, the table stores two numbers: the saving per run as a share of a static
+run, $s = \Delta/\Cstatic$, and the one-time cost in static runs, $r = \Copt/\Cstatic$. The
+output is \emph{keep static}, \emph{tune} (A1) or \emph{compact} (A2).
 
-\subsection{Decision rule}
-Fig.~\ref{fig:algo} gives the procedure. The framework first estimates the costs of $w$ from
-the cost table, then discards any action whose estimated saving is not larger than the
-measurement noise floor $\delta(w)$, and finally chooses the option with the lowest total cost.
-Ties are resolved in favour of the static configuration, because an action that does not
-clearly save money should not be applied.
+\textbf{Estimating an unseen workload.} We describe each workload by three features: the
+logarithm of the number of orders, the logarithm of the number of input files, and the share
+of rows that reach the shuffle. Each feature is scaled by its range over the reference
+workloads. For each action, CAO-DF finds the \emph{nearest} reference workload (Euclidean
+distance; equal distances are averaged) and copies its $s$ and $r$. We chose this method
+because it is the simplest one that can be explained in one sentence; threshold rules and
+interpolation were the alternatives.
+
+\textbf{Decision.} In units of one static run, the predicted total cost is $N$ for keeping the
+static configuration and $r + N(1 - s)$ for an action (Fig.~\ref{fig:algo}). An action is only
+considered if its estimated saving is at least a noise floor $\delta$; the cheapest option
+wins, and ties go to \emph{keep static}.
 
 \begin{figure}[t]
 \centering
 \fbox{\begin{minipage}{0.94\columnwidth}
-\small
-\textbf{Input:} workload $w$, executions $N$, cost table $T$\\
-\textbf{Output:} decision $a^{*} \in \{\textit{none}, \mathrm{A1}, \mathrm{A2}\}$
+\small\raggedright
+\textbf{Input:} workload $w$, runs $N$, reference table $T$, floor $\delta$\\
+\textbf{Output:} $a^{*} \in \{\textit{static}, \mathrm{A1}, \mathrm{A2}\}$
 \begin{algorithmic}[1]
-  \STATE $(\Cstatic, \{\Copt(a), \Crun(a)\}_{a}) \leftarrow \textsc{Estimate}(w, T)$
-  \STATE $TC(\textit{none}) \leftarrow N \cdot \Cstatic$
+  \STATE $TC(\textit{static}) \leftarrow N$
   \FOR{$a \in \{\mathrm{A1}, \mathrm{A2}\}$}
-    \IF{$\Cstatic - \Crun(a) \le \delta(w)$}
-      \STATE $TC(a) \leftarrow \infty$ \COMMENT{saving within noise}
-    \ELSE
-      \STATE $TC(a) \leftarrow \Copt(a) + N \cdot \Crun(a)$
-    \ENDIF
+    \STATE $(s_a, r_a) \leftarrow$ values of the nearest workload to $w$ in $T$ for $a$
+    \STATE $TC(a) \leftarrow r_a + N(1 - s_a)$ \textbf{if} $s_a \ge \delta$ \textbf{else} $\infty$
   \ENDFOR
-  \STATE $a^{*} \leftarrow \arg\min_{a} TC(a)$, ties $\rightarrow$ \textit{none}
-  \RETURN $a^{*}$
+  \RETURN $\arg\min_{a} TC(a)$, ties $\rightarrow$ \textit{static}
 \end{algorithmic}
 \end{minipage}}
-\caption{The CAO-DF decision procedure.}
+\caption{The CAO-DF decision rule (costs in units of one static run).}
 \label{fig:algo}
 \end{figure}
 
-\subsection{Why a noise floor is needed}
-Without the noise floor the rule would act on differences that are measurement noise. Two
-observations from our experiments motivate it. First, for workloads stored as a single file,
-compaction rewrites data that is already compact; its measured ``saving'' is a few
-milliseconds of either sign, yet a naive rule can still report a finite break-even point for
-it. Second, near the optimum of A1, several partition counts are indistinguishable within
-run-to-run variation, so the identity of the single fastest setting is partly an accident of
-measurement. The noise floor turns both cases into explicit ties. We set $\delta(w)$ from the
-run-to-run variation of the static configuration of $w$ \tbd{exact definition and value,
-fixed in Phase 9 before validation}.
+\textbf{Why a noise floor.} Without it, the rule would act on random variation. Compacting a
+single-file input saves nothing, yet its measured ``saving'' can be slightly positive by chance
+and give a finite break-even point (Section~\ref{sec:results}). We set $\delta = 10\,\%$ of a
+static run. In our data, the spread (interquartile range) of the static runs was 0.2--16\,\%
+of their median, every real saving was at least 23\,\%, and every noise ``saving'' was at most
+2\,\%, so 10\,\% separates the two clearly.
 
-\subsection{Choosing the A1 setting}
-For A1, \textsc{Estimate} returns the partition count with the lowest estimated per-execution
-cost. Settings whose cost lies within $\delta(w)$ of the best form a plateau of equivalent
-choices, and we report the plateau rather than a single value. Because P1 and P2 weight
-parallelism differently, the chosen setting may depend on the cost proxy; the framework
-evaluates each proxy separately.
-
-\subsection{Unseen workloads}
-A practical framework must decide for workloads it has not profiled. \textsc{Estimate}
-therefore maps $w$ to the profiled reference workloads using its observable features.
-\tbd{Final estimation method (nearest reference workload, threshold rules on shuffle volume
-and file count, or interpolation), selected in Phase 9 as the simplest option that validates.}
-We evaluate the framework on workloads generated with different random seeds and an
-intermediate data volume that were never used to build the cost table
-(Section~\ref{sec:method}).
+\textbf{Baselines.} We compare CAO-DF with three alternatives: \emph{static} (always keep the
+default), \emph{performance-only} (always pick the action with the largest estimated saving,
+ignoring its one-time cost), and an \emph{oracle} that knows the measured costs in hindsight.

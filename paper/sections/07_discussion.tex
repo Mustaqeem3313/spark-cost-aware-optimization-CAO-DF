@@ -1,7 +1,50 @@
 \section{Discussion}
 \label{sec:discussion}
 
-\tbd{Drafted after Phase 10: answers to RQ1--RQ3; why the default partition count is the worst
-point on this platform; the choice of cost proxy and its effect on the optimum; A2 as an
-interaction with the shuffle setting; when ``do nothing'' is the right decision; practical
-guidance for operators.}
+\textbf{RQ1: what drives cost and benefit?} For compaction, the number of input files is the
+main driver: with one file there is nothing to gain, and with 10 or more files the benefit is
+large. Data volume changes the size of the gain (66\,\% for small and 25--32\,\% for large data;
+probably because large data spends more of its time on work that compaction does not remove).
+For tuning, every workload gained a lot from leaving the default, and volume mainly moved the
+best setting from 1--2 to 4 partitions. Shuffle volume changed the results only slightly in
+our range (e.g.\ 7.95$\times$ against 8.47$\times$ for large data). The run frequency $N$
+decides \emph{which} action wins: cheap compaction wins for few runs and tuning, with its
+larger saving, wins for many runs.
+
+\textbf{RQ2: does a cost rule help?} Yes. CAO-DF lowered estimated total cost by 47\,\% (P1)
+and 72\,\% (P2) on average and came close to the hindsight oracle. Its advantage over
+performance-only comes almost entirely from small $N$: performance-only pays for a full search
+even when the job will run only once.
+
+\textbf{RQ3: when does each action pay off?} A full partition search paid off after three
+runs, and immediately if a good setting is already known. Compaction paid off at the first run
+on fragmented input and never on single-file input. So the rule of thumb is: do nothing for a
+one-off job on well-laid-out data; compact fragmented input first; tune when the job will run
+more than a few times.
+
+\textbf{Why 200 partitions was the slowest.} When a shuffle has at most 200 output partitions
+and no map-side combine, Spark uses a \emph{bypass-merge} writer
+(\texttt{spark.shuffle.sort.bypassMergeThreshold}) \cite{spark2024config}. This writer opens one
+temporary file per output partition in every map task, so at 200 partitions each map task
+creates 200 small files. Above the threshold Spark uses a sort-based writer that writes one
+file per map task; we believe this is why 400 partitions was faster than 200. Creating many
+small files is slow on Windows (NTFS), which likely makes the effect larger on our machine. The
+same mechanism would explain part of the compaction gain: fewer input files mean fewer map
+tasks, and so fewer shuffle files.
+
+\textbf{The cost measure matters.} P1 charges for the whole machine and P2 only for the core
+time that tasks use. Under P2, compaction looks much better and is chosen more often, because
+it removes task time even when the wall-clock time barely changes. A practitioner should pick
+the measure that matches how they pay: per machine-hour (P1, e.g.\ a fixed cluster) or per
+resource use (closer to P2, e.g.\ serverless).
+
+\textbf{Doing nothing is a valid answer.} CAO-DF chose \emph{keep static} for the single-file
+workload at $N = 1$. The noise floor also matters: without it, the 0.9\,\% ``saving'' of
+compacting a single large file would count as real and give a finite break-even point
+($\Nstar = 11$ in Table~\ref{tab:breakeven}). Performance-only, which ignores one-time costs,
+tuned in every case.
+
+\textbf{Practical guidance.} (1) Do not keep 200 shuffle partitions on small or medium data;
+even a rough choice (1--8 here) is far better. (2) Compact fragmented input before tuning when
+the job runs only a few times. (3) Count the search runs as a cost: they are what makes tuning
+a poor choice for one-off jobs.

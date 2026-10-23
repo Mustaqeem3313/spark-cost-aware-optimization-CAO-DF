@@ -265,7 +265,7 @@ the best setting; "compact" = compaction job + compacted run; "nothing" = 200 pa
 | Proxy | Strategy | Win / tie / loss vs static | Mean cost reduction (95 % bootstrap CI) | Total-cost reduction | Matches oracle | Max regret |
 |---|---|---|---|---|---|---|
 | P1 | CAO-DF | 13 / 1 / 2 | 47.3 % (30.5 – 62.3) | 74.1 % | 14 / 16 | 23.9 % |
-| P1 | performance-only | 12 / 0 / 4 | 6.5 % (−44.0 – 50.1) | 71.6 % | — | — |
+| P1 | performance-only | 12 / 0 / 4 | 6.5 % (−44.0 – 50.1) | 71.5 % | — | — |
 | P2 | CAO-DF | 15 / 1 / 0 | 72.2 % (59.6 – 81.8) | 87.9 % | 14 / 16 | 13.6 % |
 | P2 | performance-only | 12 / 0 / 4 | 23.2 % (−23.2 – 62.6) | 83.6 % | — | — |
 
@@ -335,6 +335,8 @@ Oracle mean reduction: 49.7 % (P1), 72.6 % (P2). Win/tie uses |ΔTC| ≤ δ · T
 | 2026-10-21 | Compaction via `coalesce`, not `repartition` | Matches bin-pack compaction (no full shuffle) → realistic `Copt` |
 | 2026-10-21 | No extra 500-file level | Pilot gate passed; master plan says add only if it fails |
 | 2026-10-21 | Same GitHub repository for all phases | Single reproducible artifact; tags per milestone |
+| 2026-10-23 | Paper in IEEEtran conference format with the standard experimental structure: Introduction (RQs, H1/H2) → Related Work → Problem/Cost Model → Framework → Experimental Setup → Experimental Results → Discussion → Threats to Validity (internal/construct/external) → Conclusion; ≤ 8 pages incl. references | Author's request; IEEE empirical-paper convention; tables captioned above, figures below |
+| 2026-10-23 | H1 verdict: supported for A2, only partly for A1 (best setting and speed-up differ, but the decision to tune does not) | Formal per-pair CIs deferred to Phase 10 |
 
 ## 6. Open questions
 

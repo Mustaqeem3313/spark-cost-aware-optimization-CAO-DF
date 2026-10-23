@@ -1,82 +1,174 @@
-\section{Results}
+\section{Experimental Results}
 \label{sec:results}
 
-\tbd{Drafted after Phase 10. Planned structure:}
+\subsection{Partition tuning (A1)}
+Fig.~\ref{fig:a1} shows the run time of each partition setting. The default of 200 partitions
+was the \emph{slowest} setting on all four workloads. The best setting was 7.9--11.3$\times$
+faster: 4 partitions on both large workloads (7.95$\times$ and 8.47$\times$), 1 partition on
+small\_high (11.31$\times$) and 2 on small\_low (10.66$\times$). The optimum is a wide plateau:
+settings from 1 to 8 were all much faster than 200. Even 400 partitions was 2.8--3.7$\times$
+faster than 200. The amount of data shuffled was the same for every setting and nothing was
+spilled to disk, so the differences come from the number of shuffle tasks and files, not from
+the data. Measured by executor time (P2) instead of wall-clock time, 1 partition was best on
+every workload. Five of the 32 cells were noisy (CV $> 0.2$), each because of a single slow run
+at 1 or 2 partitions; removing that run left the ranking of settings unchanged (Spearman
+$\rho \ge 0.976$).
 
-\subsection{A1: shuffle-partition tuning}
-\tbd{Partition curves per workload (wall-clock and executor time); default 200 slowest on every
-workload; best setting 7.9--11.3$\times$ faster; optimum 1--4 partitions, growing with volume;
-400 faster than 200 (bypass-merge threshold); plateau of equivalent settings; zero spill.}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_a1_boxplots}
+\caption{Run time per shuffle partition setting (5 blocks, log scale). The dark box is the
+fastest setting and the red box is Spark's default of 200.}
+\label{fig:a1}
+\end{figure}
 
-\subsection{A2: file compaction}
-\tbd{Before/after per workload; benefit 66\,\% (small, 10/50 files), 24.6\,\% and 32.3\,\%
-(large, 10/50 files), within noise for single-file inputs; saturation between 10 and 50 files;
-compaction cost 0.18--1.29\,s.}
+\subsection{File compaction (A2)}
+Fig.~\ref{fig:a2} compares runs before and after compaction. On fragmented input (10 or 50
+files) compaction cut the median run time by 66.2\,\% and 66.4\,\% for small data and by
+24.6\,\% and 32.3\,\% for large data, and it was faster in all 5 paired blocks. On single-file
+input it changed nothing ($-1.7\,\%$ and $-0.3\,\%$). The benefit grows with the number of
+files for large data and is already saturated at 10 files for small data. The compaction job
+itself took only 0.14--1.29\,s. Executor time fell from 61--62\,s to 9\,s (large) and from
+31--32\,s to 4\,s (small). More input files create more scan tasks, and at 200 shuffle
+partitions every map task writes 200 shuffle files, so the A2 benefit is partly an
+\emph{interaction} with the default partition setting. Six of the 18 cells were noisy.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_a2_bars}
+\caption{Median run time before and after compaction, and the time of the compaction job
+(error bars: IQR over 5 blocks; 200 shuffle partitions).}
+\label{fig:a2}
+\end{figure}
 
 \subsection{Break-even points}
-Table~\ref{tab:breakeven} gives the per-execution saving, the one-time cost relative to one
-static execution, and the break-even point of every action under both proxies.
-Fig.~\ref{fig:tc} shows the corresponding total-cost lines.
+Table~\ref{tab:breakeven} combines the savings and one-time costs. A full partition search
+costs 2.1--2.5 static runs under P1 (1.8--2.2 under P2), but it saves 87--91\,\% of every
+later run, so it pays for itself after three runs ($\Nstar = 3$; 2--3 under P2). At $N = 50$ it
+lowers total cost by 82.5--87.0\,\% (P1) and 91.9--95.1\,\% (P2). Compaction costs only
+6--20\,\% of a run under P1 and less than 2\,\% under P2, so on fragmented input it pays for
+itself at the first run. On single-file input it never pays off. The one finite value there
+($\Nstar = 11$, large, P2) comes from a 0.9\,\% ``saving'' that is within the noise and is
+removed by the noise floor. Fig.~\ref{fig:tc} shows three typical total-cost lines, and
+Fig.~\ref{fig:map} places every workload on one break-even map. Halving the price or raising
+it by half changed no $\Nstar$, as expected from (\ref{eq:obep}).
 
 \begin{table}[t]
-\caption{Estimated saving per execution and break-even point $\Nstar$}
+\caption{Saving per Run, One-Time Cost and Break-Even Point}
 \label{tab:breakeven}
 \centering
-\footnotesize
-\begin{tabular}{@{}llrrrrr@{}}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrr@{}}
 \toprule
-& & \multicolumn{2}{c}{\textbf{Saving (\%)}} & & \multicolumn{2}{c}{$\boldsymbol{\Nstar}$} \\
-\cmidrule(lr){3-4}\cmidrule(l){6-7}
-\textbf{Workload} & \textbf{Action} & P1 & P2 & $\Copt/\Cstatic$ & P1 & P2 \\
+Action & Workload & Saving \% & $\Copt/\Cstatic$ & $\Nstar$ \\
+ & & P1 / P2 & P1 & P1 / P2 \\
 \midrule
-large\_high  & A1 & 87.4 & 95.9 & 2.44 & 3 & 3 \\
-large\_low   & A1 & 88.2 & 97.4 & 2.49 & 3 & 3 \\
-small\_high  & A1 & 91.2 & 98.6 & 2.08 & 3 & 2 \\
-small\_low   & A1 & 90.6 & 98.5 & 2.23 & 3 & 2 \\
+A1 & large\_high   & 87.4 / 95.9 & 2.44 & 3 / 3 \\
+A1 & large\_low    & 88.2 / 97.4 & 2.49 & 3 / 3 \\
+A1 & small\_high   & 91.2 / 98.6 & 2.08 & 3 / 2 \\
+A1 & small\_low    & 90.6 / 98.5 & 2.23 & 3 / 2 \\
 \midrule
-large, 1 file   & A2 & $-0.2$ & 0.9   & 0.20 & $\infty$ & 11$^{\dagger}$ \\
-large, 10 files & A2 & 23.0   & 85.1  & 0.20 & 1 & 1 \\
-large, 50 files & A2 & 34.2   & 85.9  & 0.18 & 1 & 1 \\
-small, 1 file   & A2 & $-6.5$ & $-6.6$ & 0.12 & $\infty$ & $\infty$ \\
-small, 10 files & A2 & 65.1   & 88.4  & 0.06 & 1 & 1 \\
-small, 50 files & A2 & 67.4   & 87.4  & 0.09 & 1 & 1 \\
+A2 & large, 1 file   & $-$0.2 / 0.9  & 0.20 & $\infty$ / 11$^{\dagger}$ \\
+A2 & large, 10 files & 23.0 / 85.1   & 0.20 & 1 / 1 \\
+A2 & large, 50 files & 34.2 / 85.9   & 0.18 & 1 / 1 \\
+A2 & small, 1 file   & $-$6.5 / $-$6.6 & 0.12 & $\infty$ / $\infty$ \\
+A2 & small, 10 files & 65.1 / 88.4   & 0.06 & 1 / 1 \\
+A2 & small, 50 files & 67.4 / 87.4   & 0.09 & 1 / 1 \\
 \bottomrule
-\multicolumn{7}{@{}p{0.95\columnwidth}@{}}{\scriptsize A1 with search-based $\Copt$; with
-rule-based $\Copt = 0$, $\Nstar = 1$ for every A1 workload. $\Copt/\Cstatic$ under P1.
-Savings are differences of cell medians. $^{\dagger}$Saving smaller than the interquartile
-range of the static cost, i.e.\ within measurement noise.}
+\multicolumn{5}{@{}l}{\footnotesize $^{\dagger}$Saving below the noise floor $\delta$; treated as no
+saving.}
 \end{tabular}
 \end{table}
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/total_cost_curves_p1.pdf}
-\caption{Estimated total cost $TC(a,N)$ under proxy P1 for every workload; dots mark $\Nstar$.}
+\includegraphics[width=\columnwidth]{figures/fig_tc_examples}
+\caption{Total cost over $N$ future runs (P1, in units of one static run). Left: tuning pays
+off after three runs, or at once if the setting is already known. Middle: compaction of
+fragmented input pays off at once. Right: compaction of a single file never pays off.}
 \label{fig:tc}
-\end{figure*}
+\end{figure}
 
-\textbf{A1.} Searching the eight candidate settings costs 2.1--2.5 static executions under P1
-(1.8--2.2 under P2), while the chosen setting saves 87--99\,\% of every subsequent execution.
-The search therefore pays for itself after two or three executions on every workload, and
-after a single execution if the setting is known without a search. At $N = 50$ the searched
-setting lowers the estimated total cost by 82.5--87.0\,\% under P1 and 91.9--95.1\,\% under P2.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_breakeven_map}
+\caption{Break-even map (P1). Each point is one workload and action; points below a line pay
+off within that many runs. Filled: study workloads; open: unseen validation workloads.}
+\label{fig:map}
+\end{figure}
 
-\textbf{A2.} Compaction costs between 6\,\% and 20\,\% of one execution on fragmented data
-under P1, and less than 2\,\% under P2, so it pays for itself at the first execution whenever
-the input is fragmented. For single-file inputs it never pays off. The only finite break-even
-point among them, $\Nstar = 11$ for the large single-file workload under P2, comes from a
-saving of 0.9\,\% that lies inside the run-to-run variation, and is an artefact a decision rule
-must not act on (Section~\ref{sec:framework}).
+\subsection{Effect of the cost measure}
+Fig.~\ref{fig:proxy} compares the two cost measures. For tuning they agree closely. For
+compaction, P2 shows much larger savings (85--88\,\% against 23--67\,\%), because compaction
+removes many short tasks (counted by P2) but the machine is still reserved while the job runs
+(counted by P1). The two measures give the same $\Nstar$ for 11 of 14 workload--action pairs,
+and the same act-or-not decision for all of them once the noise floor is applied.
 
-\textbf{Price and proxy.} Scaling the price by 0.5 or 1.5 leaves every $\Nstar$ and every
-decision unchanged, as expected when $\Copt$ and $\Crun$ use the same proxy; only the absolute
-savings scale. The two proxies give the same $\Nstar$ for 11 of the 14 workload--action pairs
-and, once savings within noise are discarded, agree on whether to act for every workload at
-every $N \in \{1, 5, 10, 50\}$. They differ in two respects. First, P2 always selects a single shuffle partition for A1,
-whereas P1 selects 1--4, because extra partitions shorten wall-clock time but add task
-overhead. Second, P2 attributes a much larger relative saving to compaction (85--88\,\% versus
-23--67\,\%): fragmented input multiplies the task-seconds spent by the executors, which P2
-charges in full, while much of that work runs in parallel and so adds less to wall-clock time.
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\columnwidth]{figures/fig_proxy_scatter}
+\caption{Saving per run under P1 (machine time) and P2 (task time). Points above the diagonal
+look better under P2.}
+\label{fig:proxy}
+\end{figure}
 
-\subsection{Framework validation}
-\tbd{Phase 9: decisions on unseen workloads, cost versus static baseline; verdicts for H1--H3.}
+\subsection{Validation on unseen workloads}
+Table~\ref{tab:validation} and Fig.~\ref{fig:validation} compare CAO-DF with the baselines on
+the four unseen workloads at $N \in \{1, 5, 10, 50\}$ (16 cases per cost measure). CAO-DF was
+cheaper than or equal to the static configuration in 14 of 16 cases under P1 and in all 16
+under P2, and its average reduction was within 2.4 points (P1) and 0.4 points (P2) of the
+hindsight oracle. Over all cases together, total cost fell by 74.1\,\% (P1) and 87.9\,\% (P2).
+Performance-only always chose tuning; at $N = 1$ this cost 2.4--2.7$\times$ the static cost
+under P1, because the search costs more than one run saves. CAO-DF avoided all four of these
+losses. Its choices changed with $N$ as the model predicts: nothing or cheap compaction for few
+runs, and tuning for many runs.
+
+CAO-DF lost to static only twice, both under P1 at $N = 1$, when it chose compaction for the
+500K/25-file and 2M/5-file workloads (regret 14.5\,\% and 23.9\,\%). Compaction cut their
+wall-clock time by only $-1.7\,\%$ and 3.3\,\%, while the nearest study workloads suggested
+34\,\% and 23\,\%. Estimated tuning savings were within 3.4 points of the measured ones on
+every workload, and the best partition count was again small (2 or 4). In a leave-one-out
+test on the study workloads, the rule agreed with the hindsight choice in 80\,\% of cases
+(64/80); all misses were on the two single-file A2 workloads, whose nearest neighbour has 10
+files. Setting $\delta$ to 0, 5\,\% or 20\,\% gave identical choices.
+
+\begin{table}[t]
+\caption{Validation on Four Unseen Workloads (16 Cases per Cost Measure)}
+\label{tab:validation}
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}llccc@{}}
+\toprule
+ & Strategy & Win/tie/loss & Mean reduction & Same as \\
+ & & vs static & (95\,\% CI) & oracle \\
+\midrule
+\multirow{2}{*}{P1} & CAO-DF           & 13/1/2 & 47.3\,\% (30.5, 62.3)  & 14/16 \\
+                    & Perf.-only       & 12/0/4 & 6.5\,\% ($-$44.0, 50.1) & -- \\
+\midrule
+\multirow{2}{*}{P2} & CAO-DF           & 15/1/0 & 72.2\,\% (59.6, 81.8)  & 14/16 \\
+                    & Perf.-only       & 12/0/4 & 23.2\,\% ($-$23.2, 62.6) & -- \\
+\bottomrule
+\multicolumn{5}{@{}l}{\footnotesize Oracle mean reduction: 49.7\,\% (P1), 72.6\,\% (P2).}
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_validation}
+\caption{Cost of each strategy relative to static on the unseen workloads (P1). Letters show
+CAO-DF's choice: N = nothing, T = tune, C = compact. Bars above the red line lose to static.}
+\label{fig:validation}
+\end{figure}
+
+\subsection{Hypotheses}
+\textbf{H1} is \emph{supported for compaction}: its benefit ranged from none on single-file
+input to 66\,\% on fragmented input, and it grew with the number of files for large data
+(saturating at 10 files for small data). For tuning, H1 is \emph{only partly supported}: the
+best setting (1--2 partitions for small data, 4 for large) and the speed-up
+(7.95--11.31$\times$) differed between workloads, but every workload gained by a similarly
+large factor, so the decision to tune did not depend on the workload. \textbf{H2} is
+\emph{supported}: on unseen workloads CAO-DF was no worse than static in a clear majority of
+cases, and its mean reduction is positive with a 95\,\% confidence interval that excludes zero
+under both cost measures.
