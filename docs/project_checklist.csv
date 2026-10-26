@@ -36,9 +36,9 @@
 35,9,Decision framework,"decision_framework.py: rule-based decide(w, N) with noise-floor threshold",Done,"Nearest measured workload; delta = 10% (src/decision_framework.py)"
 36,9,Decision framework,"Generate unseen validation workloads (new seeds, medium volume)",Done,"4 workloads, seeds 701-704 (workload_generator.py --validation)"
 37,9,Decision framework,Validate: Static vs Framework total estimated cost,Done,"E6 120 runs; H2 supported (research log 3c)"
-38,10,Analysis,"Descriptive stats, effect sizes, bootstrap CIs",Pending,
+38,10,Analysis,"Descriptive stats, effect sizes, bootstrap CIs",Done,"src/stats_analysis.py + analysis/analysis.ipynb (research log 3d)"
 39,10,Analysis,7 figures (F1-F7) + tables T1-T4,Done,"6 data figures + algorithm figure; tables I-IV in paper"
-40,10,Analysis,H1 / H2 verdicts,Pending,
+40,10,Analysis,H1 / H2 verdicts,Done,"H1 supported (A1 by pre-registered test; A2 on wall); H2 supported"
 41,11,Paper,Choose venue / format (IEEE conference template),Done,"IEEEtran conference, experimental-paper structure (venue TBD)"
 42,11,Paper,Draft I Introduction,Done,"RQ1-RQ3, H1-H2, contributions, headline results"
 43,11,Paper,Draft II Background / Related Work,Done,paper/sections/02_related_work.tex

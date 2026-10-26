@@ -70,6 +70,9 @@ Before any timed step: connect AC power, select the best-performance power mode 
 | 12. Decision framework + validation (no Spark) | `python src\decision_framework.py [--delta 0.10]` | `validation_decisions.csv`, `validation_summary.csv`, `framework_loo.csv` |
 | Ask the framework for one workload | `python src\decision_framework.py --decide --orders 500000 --files 25 --shuffle 0.5 --runs 5` | printed choice: Nothing / Tune / Compact |
 | 13. Paper figures (no Spark) | `python src\make_figures.py` | `paper/figures/fig_*.pdf`, `results/figures/fig_*.png` |
+| 14. Statistical analysis (no Spark) | `python src\stats_analysis.py` | `results/processed/stats_*.csv` (bootstrap CIs, effect sizes, verdicts) |
+| 15. Analysis notebook | `python analysis\build_notebook.py`, then `jupyter nbconvert --to notebook --execute --inplace analysis\analysis.ipynb` | `analysis/analysis.ipynb`, `analysis/figures/fig*.png` |
+| Tests | `python -m unittest discover -s tests -v` | 13 tests |
 
 Costs are estimated from published AWS EC2 on-demand pricing, never billed; the price, proxies and assumptions are documented in [`Cost_Model_Assumptions.md`](Cost_Model_Assumptions.md).
 
@@ -102,7 +105,10 @@ src/
   run_validation.py           E6: all actions on the unseen validation workloads
   decision_framework.py       CAO-DF rule (nearest measured workload + noise floor) and its validation
   make_figures.py             builds every paper figure from the result files
+  stats_analysis.py           Phase 10: bootstrap CIs, effect sizes, hypothesis verdicts
   environment_report.py       generates environment.md
+analysis/                     build_notebook.py -> analysis.ipynb (+ HTML, figures)
+tests/                        unit tests for stats_analysis.py
 docs/research_log.md          dated record of runs, findings, limitations and decisions
 experiments/configs/          workload index
 results/raw/                  per-run measurements (append-only)

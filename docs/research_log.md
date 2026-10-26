@@ -304,6 +304,40 @@ Oracle mean reduction: 49.7 % (P1), 72.6 % (P2). Win/tie uses |ΔTC| ≤ δ · T
 
 ---
 
+## 3d. Statistical analysis (Phase 10, 2026-10-26)
+
+Script `src/stats_analysis.py` (no Spark, ~40 s); notebook `analysis/analysis.ipynb` (12 sections,
+15 figures, HTML export `analysis/analysis.html`); tests `tests/test_stats_analysis.py` (13, pass).
+Method: block bootstrap, 10 000 resamples, seed 2026, the same block indices for every cell of a
+workload; plateau = settings within 10 % of the best; Cliff's δ; noise floor δ = 0.10. 13/13 data
+checks pass and every point value reproduces Phases 7–9.
+
+- **F-ST-1 — A1 speed-ups are large and certain.** Wall (95 % CI): large_high 7.95 (7.26–8.75),
+  large_low 8.47 (7.42–11.09), small_high 11.31 (10.41–13.42), small_low 10.66 (8.24–11.11).
+  Executor 24.5–71.6×. Cliff's δ = 1 in every cell vs the 200 default.
+- **F-ST-2 — H1 (A1) passes the pre-registered test.** Wall: 1/6 pairs (large_high vs
+  small_high, 42 % difference, CIs disjoint); executor: 4/6. 4/6 Bonferroni ratio CIs exclude 1
+  (wall); 2/6 pairs have disjoint plateaus. Best setting is stable: share of resamples 0.69–1.0;
+  when it moves, it moves to a neighbouring 1/2/4 (small_high picks 4 in 5.7 %).
+- **F-ST-3 — A2 benefit grows then saturates.** Wall benefit large −0.3/24.6/32.3 %, small
+  −1.7/66.2/66.4 % (1/10/50 files). 10→50 gain CI: large +4.4 to +17.8, small −15.8 to +3.3.
+  Executor small is non-monotonic (89.2 → 86.9 %) → H1 (A2) only partly supported on executor.
+- **F-ST-4 — Break-even is stable.** Copt ratio A1 search 2.08–2.49 (P1), 1.77–2.16 (P2); A2
+  0.057–0.198 (P1), 0.002–0.097 (P2). N*: A1 3 (P1), 2–3 (P2), moves by at most ±1 under
+  resampling; A2 fragmented 1; single file ∞ (P2 large_low = 11, never pays in 26 % of resamples).
+- **F-ST-5 — Noise.** Noisy cells (CV > 0.20): 5/32 A1, 6/18 A2, 2/40 VAL; median CV
+  0.16/0.11/0.08. Noisy A1 cells are the 1–2-partition short runs (L3).
+- **F-ST-6 — H2 holds with CIs.** P1 13 win / 1 tie / 2 loss, mean reduction 47.3 % (case CI
+  30.5–62.3; workload-resampled CI 38.8–58.3); P2 15/1/0, 72.2 % (59.6–81.8; 57.6–83.6). At P1
+  N = 1: framework 102.1 % of static, performance-only 257.2 %, oracle 90.9 %. Estimate error
+  median 2.8 points, max 35.9 (the two compaction over-estimates of F-FW-4).
+- **F-ST-7 — Robustness.** Price ±50 % changes N* in 0/28 rows; P1/P2 N* agree in 11/14 pairs;
+  LOO 80 %; δ ∈ {0, 0.05, 0.1, 0.2} gives the same 32 choices.
+- **Mechanism checks.** Task count vs time Spearman 0.70; shuffle MB vs best partition count
+  Spearman 0.14 (no clear link in our narrow size range).
+
+---
+
 ## 4. Limitations register (for the Threats to Validity section)
 
 | # | Limitation | Affects | Mitigation / wording |
@@ -339,6 +373,8 @@ Oracle mean reduction: 49.7 % (P1), 72.6 % (P2). Win/tie uses |ΔTC| ≤ δ · T
 | 2026-10-26 | System design diagrams as PlantUML source + PNG/SVG/PDF in `paper/system_design/` (9 diagrams, colour-coded) | Author's choice; text sources are version-controlled and diffable; not included in the 8-page paper |
 | 2026-10-26 | Paper experiment labels corrected: A1 analysis = E3; E1, E2, E4 named as preparatory | Matches the scripts and the research log (E1 gate, E2 sweep, E3 formal A1, E4 A2 pilot, E5 formal A2, E6 validation) |
 | 2026-10-23 | H1 verdict: supported for A2, only partly for A1 (best setting and speed-up differ, but the decision to tune does not) | Formal per-pair CIs deferred to Phase 10 |
+| 2026-10-26 | H1 (A1) verdict revised to "supported by the pre-registered test; the decision to tune does not change across workloads" (author's choice) | Phase 10: 1/6 pairs (wall) and 4/6 (executor) meet the criterion (F-ST-2) |
+| 2026-10-26 | Statistics by block bootstrap (10 000, seed 2026) instead of p-values; notebook generated from `analysis/build_notebook.py` | n = 5 blocks cannot reach p < 0.0625; generator keeps text and figures reproducible |
 
 ## 6. Open questions
 

@@ -163,12 +163,14 @@ CAO-DF's choice: N = nothing, T = tune, C = compact. Bars above the red line los
 \end{figure}
 
 \subsection{Hypotheses}
-\textbf{H1} is \emph{supported for compaction}: its benefit ranged from none on single-file
-input to 66\,\% on fragmented input, and it grew with the number of files for large data
-(saturating at 10 files for small data). For tuning, H1 is \emph{only partly supported}: the
-best setting (1--2 partitions for small data, 4 for large) and the speed-up
-(7.95--11.31$\times$) differed between workloads, but every workload gained by a similarly
-large factor, so the decision to tune did not depend on the workload. \textbf{H2} is
-\emph{supported}: on unseen workloads CAO-DF was no worse than static in a clear majority of
-cases, and its mean reduction is positive with a 95\,\% confidence interval that excludes zero
-under both cost measures.
+\textbf{H1} is \emph{supported for compaction} on wall time: its benefit ranged from none on
+single-file input to 66\,\% on fragmented input, and it grew with the number of files for
+large data (10$\to$50 files added 4.4--17.8 points, 95\,\% CI) but saturated at 10 files for
+small data. On executor time the small-data trend was not monotonic, so there it is only
+partly supported. For tuning, H1 is \emph{supported by our pre-registered test}: the best
+setting (1--2 partitions for small data, 4 for large) and the speed-up differed between
+workloads (small-high 11.31$\times$, CI 10.41--13.42, against large-high 7.95$\times$, CI
+7.26--8.75). However, every workload gained by a large factor, so the \emph{decision} to tune
+did not depend on the workload. \textbf{H2} is \emph{supported}: on unseen workloads CAO-DF
+was no worse than static in a clear majority of cases, and its mean reduction was 47.3\,\%
+(CI 30.5--62.3) under P1 and 72.2\,\% (CI 59.6--81.8) under P2.

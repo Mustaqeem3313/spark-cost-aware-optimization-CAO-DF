@@ -1,0 +1,14 @@
+check,passed,detail
+Raw file has the 34-column schema,True,34 columns
+No warm-up rows in the raw file,True,0 warm-up rows
+Every measured run uses pipeline v2,True,v2
+A1: 160 measured runs,True,160 runs
+A1: 5 blocks,True,5 blocks
+A2: 90 measured runs,True,90 runs
+A2: 5 blocks,True,5 blocks
+VAL: 120 measured runs,True,120 runs
+VAL: 3 blocks,True,3 blocks
+One run per cell and block,True,0 duplicates
+No missing wall-clock or executor times,True,0 missing values
+sparkMeasure metrics captured for every run,True,
+No disk spill in any run,True,0 runs with spill

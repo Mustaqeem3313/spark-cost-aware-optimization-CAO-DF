@@ -75,15 +75,15 @@ Optimizing a Spark pipeline is not free: tuning shuffle partitions or compacting
 
 > *"I'm not making Spark faster. I'm researching whether making it faster — or compacting its data — is worth the cost for a given workload."*
 
-### 1.4 Status dashboard (23 Oct 2026)
+### 1.4 Status dashboard (26 Oct 2026)
 
 | Metric | Value |
 |---|---|
 | Total phases | **12** (Phase 0 – Phase 11) |
-| Completed | **10** (Phases 0 – 9) |
-| In progress | **1** — Phase 10 (analysis, figures, verdicts) and the paper rewrite (≤ 8 pages, plain language) |
-| Not started | **1** (Phase 11 finalisation) |
-| Overall progress | `█████████░░░` **10 / 12 complete (83 %)** |
+| Completed | **11** (Phases 0 – 10) |
+| In progress | **1** — Phase 11 (paper finalisation: author details, similarity check, submission) |
+| Not started | **0** |
+| Overall progress | `███████████░` **11 / 12 complete (92 %)** |
 | Experimental data collected | **Formal A1** (E3, 160 runs, tag `a1-formal-v2`) · **Formal A2** (E5, 90 runs, tag `a2-formal-v2`) · A2 pilot (E4, 54 runs) · **Framework validation** (E6, 120 runs) |
 | Schedule | Re-baselined in §19.2; college deadline **15 Nov 2026** |
 
@@ -665,7 +665,7 @@ spark-cost-aware-optimization/
 │   ├── raw/        experiment_results.csv, pilot_a1_v1_results.csv (archive), pilot_a1_v2_sweep.csv
 │   ├── processed/  a1_cell_summary.csv, a1_best_config_per_workload.csv, pilot_a1_v1_best_config.csv
 │   └── figures/
-├── analysis/analysis.ipynb       ☐ (Phase 10)
+├── analysis/analysis.ipynb       ✅ (Phase 10; built by analysis/build_notebook.py)
 ├── literature/                   # matrix + review
 └── paper/                        # draft + IEEE template
     └── system_design/            # 9 UML/ER diagrams (PlantUML src + PNG/SVG/PDF)
@@ -881,13 +881,13 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 - **Deliverable:** `decision_framework.py` + validation table.
 
 #### Phase 10 — Analysis, figures, hypotheses
-- [ ] Descriptive statistics, effect sizes, bootstrap CIs (§22).
-- [ ] Seven target figures (§22.3) and supporting tables.
-- [ ] **H1** and **H2** verdicts with evidence — either outcome is a result.
-- **Deliverable:** `analysis/analysis.ipynb`, figures, verdicts.
+- [x] Descriptive statistics, effect sizes, bootstrap CIs (§22) — `src/stats_analysis.py` (26 Oct; research log §3d).
+- [x] Seven target figures (§22.3) and supporting tables — 6 data figures + algorithm figure in the paper; 15 analysis figures in the notebook.
+- [x] **H1** and **H2** verdicts with evidence — H1 supported (A1 by the pre-registered test, the decision to tune unchanged; A2 on wall time, partly on executor time); H2 supported.
+- **Deliverable:** `analysis/analysis.ipynb` (+ `analysis.html`, `analysis/figures/`), `tests/test_stats_analysis.py`.
 
 #### Phase 11 — Paper, revision, submission
-- [ ] Draft §§ 1–5 early (they do not depend on results); write §§ 6–8 directly from Phase 10 outputs.
+- [x] Draft §§ 1–5 early (they do not depend on results); write §§ 6–8 directly from Phase 10 outputs.
 - [ ] Similarity check; AI-assistance disclosure; reference verification.
 - [ ] IEEE template, PDF eXpress validation, reproducibility package, submission.
 - **Deliverable:** submission-ready paper + package.
@@ -896,13 +896,13 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 
 | # | Deliverable | Status |
 |---|---|---|
-| 1 | Research paper (submission-ready, IEEE format) | ☐ |
-| 2 | Experimental framework (Python + PySpark) | ◐ (A1 + A2 done; cost model / decision framework pending) |
+| 1 | Research paper (submission-ready, IEEE format) | ◐ (8-page draft; author details pending) |
+| 2 | Experimental framework (Python + PySpark) | ✅ |
 | 3 | Workload generator (seeded, reproducible) | ✅ |
-| 4 | `experiment_results.csv` (raw measurements, every run) | ✅ (formal A1 + A2; validation runs to come) |
-| 5 | Cost model (published pricing + measured usage, documented assumptions) | ☐ |
-| 6 | Decision framework (rule-based Nothing / Tune / Compact) | ☐ |
-| 7 | Results (7 figures, break-even curves, H1/H2 verdicts) | ☐ |
+| 4 | `experiment_results.csv` (raw measurements, every run) | ✅ (formal A1 + A2 + E6 validation) |
+| 5 | Cost model (published pricing + measured usage, documented assumptions) | ✅ |
+| 6 | Decision framework (rule-based Nothing / Tune / Compact) | ✅ |
+| 7 | Results (7 figures, break-even curves, H1/H2 verdicts) | ✅ (26 Oct; `analysis/analysis.ipynb`) |
 | 8 | Reproducibility package (code + configs + instructions) | ◐ (README + tags done; push to GitHub pending) |
 
 ---
@@ -911,11 +911,11 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 
 | Category | Count | Phases |
 |---|---:|---|
-| ✅ **Completed** | **8** | 0, 1, 2, 3, 4, 5, 6, 7 |
-| ◐ **In progress** | **0** | — |
-| ☐ **Not started** | **4** | 8, 9, 10, 11 |
+| ✅ **Completed** | **11** | 0 – 10 |
+| ◐ **In progress** | **1** | 11 |
+| ☐ **Not started** | **0** | — |
 | **Total** | **12** | |
-| **Remaining** | **4** | 8, 9, 10, 11 |
+| **Remaining** | **1** | 11 |
 
 ```
 Phase  0 Research prep         ████████████ 100 %  ✅
@@ -926,10 +926,10 @@ Phase  4 Workload generator    ████████████ 100 %  ✅
 Phase  5 Instrumentation       ████████████ 100 %  ✅
 Phase  6 A1 experiments        ████████████ 100 %  ✅ (21 Oct)
 Phase  7 A2 compaction         ████████████ 100 %  ✅ (21 Oct)
-Phase  8 Cost model            ░░░░░░░░░░░░   0 %
-Phase  9 Decision framework    ░░░░░░░░░░░░   0 %
-Phase 10 Analysis & figures    ░░░░░░░░░░░░   0 %
-Phase 11 Paper & submission    ░░░░░░░░░░░░   0 %
+Phase  8 Cost model            ████████████ 100 %  ✅ (23 Oct)
+Phase  9 Decision framework    ████████████ 100 %  ✅ (23 Oct)
+Phase 10 Analysis & figures    ████████████ 100 %  ✅ (26 Oct)
+Phase 11 Paper & submission    ████████░░░░  ~70 %  ◐ (draft done)
 ```
 
 > **Reading the numbers.** By *count* the project is two-thirds through its phases, but the remaining phases (cost model, framework, analysis, paper) carry most of the intellectual and writing effort.
