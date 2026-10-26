@@ -1,0 +1,95 @@
+@startuml 03_class
+!pragma layout smetana
+!include _style.iuml
+title CAO-DF - Class Diagram (analysis core: cost_model.py and decision_framework.py)
+skinparam classAttributeIconSize 0
+skinparam classBorderThickness 1.5
+skinparam classHeaderBackgroundColor #FFFFFF
+hide empty members
+
+class "cost_model" as CostModel << (M,#7C3AED) module >> #EDE9FE;line:6D28D9 {
+  +PRICE_PER_VCPU_HOUR_USD = 0.0505
+  +STUDY_MACHINE_VCPUS = 12
+  +STATIC_PARTITIONS = 200
+  +N_GRID = (1, 5, 10, 50)
+  +PRICE_FACTORS = (0.5, 1.0, 1.5)
+  --
+  +cost_p1(wall_clock_s, price_per_vcpu_hour, vcpus) : float
+  +cost_p2(executor_run_s, price_per_vcpu_hour) : float
+  +total_cost(copt, crun, n_runs) : float
+  +break_even_runs(copt, crun_static, crun_action) : float
+  +load_measured_runs(path) : DataFrame
+  +add_costs(runs, price, vcpus) : DataFrame
+  +summarize_cells(runs) : DataFrame
+  +a1_options(cells) : list[dict]
+  +a2_options(cells) : list[dict]
+  +breakeven_table(cells) : DataFrame
+  +sensitivity_table(runs, price, vcpus) : DataFrame
+  +plot_total_cost_curves(table, proxy, out_base, n_max)
+  +main()
+}
+
+class "decision_framework" as DFModule << (M,#1D4ED8) module >> #DBEAFE;line:1D4ED8 {
+  +DEFAULT_DELTA = 0.10
+  +ACTIONS = {A1: Tune, A2: Compact}
+  +OPTIONS = (Nothing, Tune, Compact)
+  +FEATURES = (log_orders, log_files, shuffle_fraction)
+  +BOOTSTRAP_RESAMPLES = 10 000
+  --
+  +workload_features(index_path) : DataFrame
+  +training_profiles(price, vcpus) : DataFrame
+  +estimate(profiles, action, proxy, features) : Estimate
+  +decide(profiles, features, n_runs, proxy, delta) : Decision
+  +performance_only(profiles, features, proxy, delta) : str
+  +load_validation_cells(price, vcpus) : DataFrame
+  +measured_options(cells, workload, proxy) : dict
+  +measured_tc(options, option, n_runs) : float
+  +outcome(tc, tc_static, delta) : str
+  +validate(profiles, cells, delta) : DataFrame
+  +bootstrap_ci(values, resamples, seed) : tuple
+  +summarize(table) : DataFrame
+  +leave_one_out(profiles, delta) : DataFrame
+  +plot_validation(table, proxy, out_base)
+  +main()
+}
+
+class Estimate << (D,#15803D) dataclass >> #DCFCE7;line:15803D {
+  +saving_pct : float
+  +copt_ratio : float
+  +partitions : float | None
+  +neighbours : list[str]
+}
+
+class Decision << (D,#15803D) dataclass >> #DCFCE7;line:15803D {
+  +choice : Nothing | Tune | Compact
+  +predicted_tc : dict[str, float]
+  +estimates : dict[str, Estimate]
+}
+
+class "TrainingProfile (DataFrame row)" as Profile << (R,#A16207) row >> #FEF9C3;line:A16207 {
+  +workload_id : str
+  +action : A1 | A2
+  +proxy : P1 | P2
+  +saving_pct : float  (s, fraction)
+  +copt_ratio : float  (r = Copt / Crun_static)
+  +partitions : float  (best A1 setting)
+  +orders : int
+  +files : int
+  +log_orders : float
+  +log_files : float
+  +shuffle_fraction : float
+}
+
+DFModule .[#6D28D9].> CostModel : imports load_measured_runs,\nadd_costs, summarize_cells,\nbreakeven_table
+DFModule -[#A16207]-> Profile : builds
+DFModule -[#15803D]-> Estimate : creates
+DFModule -[#15803D]-> Decision : returns
+Decision "1" *-[#15803D]- "2" Estimate : one per action
+Estimate .[#A16207].> Profile : nearest neighbour(s)
+
+note bottom of Decision
+  TC(Nothing) = N
+  TC(a) = r_a + N (1 - s_a), only if s_a >= delta
+  choice = lowest TC; exact ties go to Nothing
+end note
+@enduml

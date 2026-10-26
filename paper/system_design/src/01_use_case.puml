@@ -1,0 +1,50 @@
+@startuml 01_use_case
+!pragma layout smetana
+!include _style.iuml
+title CAO-DF - Use Case Diagram\n 
+left to right direction
+skinparam titleMargin 10
+skinparam padding 4
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecaseBorderThickness 1.5
+
+actor "Data engineer /\npipeline owner" as Engineer #FFEDD5;line:C2410C
+actor "Researcher" as Researcher #EDE9FE;line:6D28D9
+
+rectangle "CAO-DF framework" #F8FAFC;line:475569 {
+  usecase "Get a recommendation\n(keep static / tune / compact)\nfor workload w and N runs" as UC1 #FFEDD5;line:C2410C
+  usecase "Estimate saving s and\none-time cost ratio r from\nnearest measured workload" as UC2 #DBEAFE;line:1D4ED8
+  usecase "Compute total cost TC\nand break-even point N*" as UC3 #DBEAFE;line:1D4ED8
+  usecase "Generate synthetic\nworkloads" as UC4 #DCFCE7;line:15803D
+  usecase "Run measured experiments\n(A1, A2, validation)" as UC5 #DCFCE7;line:15803D
+  usecase "Convert run times to costs\n(P1 / P2, price sensitivity)" as UC6 #EDE9FE;line:6D28D9
+  usecase "Validate the rule on\nunseen workloads" as UC7 #EDE9FE;line:6D28D9
+  usecase "Produce paper figures\nand tables" as UC8 #EDE9FE;line:6D28D9
+}
+
+actor "Apache Spark\n(local[*], external)" as Spark #CCFBF1;line:0F766E
+
+Engineer -[#C2410C,thickness=2]-> UC1
+UC1 .[#1D4ED8].> UC2 : <<include>>
+UC1 .[#1D4ED8].> UC3 : <<include>>
+
+Researcher -[#6D28D9]-> UC4
+Researcher -[#6D28D9]-> UC5
+Researcher -[#6D28D9]-> UC6
+Researcher -[#6D28D9]-> UC7
+Researcher -[#6D28D9]-> UC8
+UC7 .[#6D28D9].> UC1 : <<include>>
+UC6 .[#6D28D9].> UC3 : <<include>>
+
+UC4 -[#0F766E]-> Spark
+UC5 -[#0F766E]-> Spark
+
+legend right
+  <color:#C2410C><size:16>&#9632;</size></color> engineer-facing
+  <color:#1D4ED8><size:16>&#9632;</size></color> decision core
+  <color:#15803D><size:16>&#9632;</size></color> data and experiments
+  <color:#6D28D9><size:16>&#9632;</size></color> analysis
+  <color:#0F766E><size:16>&#9632;</size></color> external system
+endlegend
+@enduml

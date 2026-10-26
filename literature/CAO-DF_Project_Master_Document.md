@@ -668,6 +668,7 @@ spark-cost-aware-optimization/
 ├── analysis/analysis.ipynb       ☐ (Phase 10)
 ├── literature/                   # matrix + review
 └── paper/                        # draft + IEEE template
+    └── system_design/            # 9 UML/ER diagrams (PlantUML src + PNG/SVG/PDF)
 ```
 
 > `spark_tuning.py` from the original repository plan is **not needed**: A1 is a runtime configuration change performed inside the A1 runner.

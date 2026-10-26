@@ -1,0 +1,178 @@
+@startuml 04_erd
+!pragma layout smetana
+!include _style.iuml
+title CAO-DF - Entity-Relationship Diagram (datasets and result tables)
+hide circle
+skinparam entityBorderThickness 1.5
+
+entity "WORKLOAD\n(workload_index.csv /\nvalidation_index.csv)" as W #DCFCE7;line:15803D {
+  * workload_id : text <<PK>>
+  --
+  data_volume : text
+  file_count_level : text
+  shuffle_volume_level : text
+  seed : int
+  num_orders : int
+  actual_file_count : int
+  actual_size_mb : float
+  orders_path : text
+  customers_path : text
+}
+
+entity "MANIFEST\n(manifest.json)" as M #DCFCE7;line:15803D {
+  * workload_id : text <<PK,FK>>
+  --
+  seed : int
+  num_orders_generated : int
+  num_customers_generated : int
+  actual_order_file_count : int
+  actual_order_size_bytes : int
+  actual_order_size_mb : float
+  requested_shuffle_fraction : float
+  actual_positive_amount_fraction : float
+}
+
+entity "CUSTOMER\n(Parquet)" as C #DCFCE7;line:15803D {
+  * customer_id : long <<PK>>
+  --
+  region : north | south | east | west
+  segment : retail | enterprise | smb
+}
+
+entity "ORDER\n(Parquet)" as O #DCFCE7;line:15803D {
+  * order_id : long <<PK>>
+  --
+  customer_id : long <<FK>>
+  product_category : text
+  amount : double
+  order_date : text (date)
+}
+
+entity "EXPERIMENT_RUN\n(experiment_results.csv)" as R #FFEDD5;line:C2410C {
+  * run_id : text <<PK>>
+  --
+  workload_id : text <<FK>>
+  experiment_action : A1 | A2 | VAL
+  config_label : text
+  shuffle_partitions : int
+  adaptive_enabled : bool
+  repetition_number : int
+  is_warmup : bool
+  wall_clock_seconds : float
+  executor_run_time_ms : long
+  executor_cpu_time_ms : long
+  shuffle_bytes_written : long
+  disk_bytes_spilled : long
+  peak_memory_percent : float
+  avg_cpu_percent : float
+  ... (34 columns in total)
+}
+
+entity "COST_CELL\n(cost_per_cell.csv)" as CC #EDE9FE;line:6D28D9 {
+  * experiment_action : A1 | A2 <<PK>>
+  * workload_id : text <<PK,FK>>
+  * config_label : text <<PK>>
+  --
+  shuffle_partitions : int
+  n : int
+  median_wall_s : float
+  median_executor_run_s : float
+  median_cost_P1, iqr_cost_P1 : float
+  median_cost_P2, iqr_cost_P2 : float
+}
+
+entity "BREAKEVEN_OPTION\n(breakeven_table.csv)" as B #EDE9FE;line:6D28D9 {
+  * workload_id : text <<PK,FK>>
+  * action : A1_search | A1_rule | A2 <<PK>>
+  * proxy : P1 | P2 <<PK>>
+  --
+  chosen_setting, search_settings : text
+  crun_static_usd, crun_action_usd : float
+  copt_usd, saving_per_run_usd : float
+  saving_pct : float
+  static_iqr_usd : float
+  saving_exceeds_static_iqr : bool
+  n_star : float
+  tc_static_N{1,5,10,50} : float
+  tc_action_N{1,5,10,50} : float
+  worthwhile_N{1,5,10,50} : bool
+}
+
+entity "COST_SENSITIVITY\n(cost_sensitivity.csv)" as S #EDE9FE;line:6D28D9 {
+  * price_factor : 0.5 | 1.0 | 1.5 <<PK>>
+  * workload_id : text <<PK,FK>>
+  * action : text <<PK>>
+  * proxy : P1 | P2 <<PK>>
+  --
+  price_per_vcpu_hour_usd : float
+  chosen_setting : text
+  n_star : float
+  net_saving_N10_usd : float
+  worthwhile_N10 : bool
+}
+
+entity "VALIDATION_DECISION\n(validation_decisions.csv)" as VD #DBEAFE;line:1D4ED8 {
+  * workload_id : text <<PK,FK>>
+  * proxy : P1 | P2 <<PK>>
+  * n_runs : 1 | 5 | 10 | 50 <<PK>>
+  --
+  framework_choice, performance_only_choice,
+  oracle_choice : Nothing | Tune | Compact
+  a1_neighbours, a2_neighbours : text
+  est_saving_tune, est_saving_compact : float
+  measured_saving_tune, measured_saving_compact : float
+  tc_static_usd, tc_framework_usd : float
+  tc_performance_only_usd, tc_oracle_usd : float
+  tc_tune_rule_usd : float
+  framework_reduction_pct : float
+  performance_only_reduction_pct : float
+  oracle_reduction_pct : float
+  framework_regret_pct : float
+  framework_vs_static : win | tie | loss
+  performance_only_vs_static : win | tie | loss
+  framework_matches_oracle : bool
+}
+
+entity "VALIDATION_SUMMARY\n(validation_summary.csv)" as VS #DBEAFE;line:1D4ED8 {
+  * proxy : P1 | P2 <<PK>>
+  * strategy : framework | performance_only <<PK>>
+  --
+  cases, wins, ties, losses : int
+  mean_reduction_pct : float
+  ci95_low, ci95_high : float
+  total_cost_reduction_pct : float
+  matches_oracle : int
+  max_regret_pct : float
+}
+
+entity "LOO_RESULT\n(framework_loo.csv)" as L #DBEAFE;line:1D4ED8 {
+  * workload_id : text <<PK,FK>>
+  * action : A1 | A2 <<PK>>
+  * proxy : P1 | P2 <<PK>>
+  * n_runs : int <<PK>>
+  --
+  neighbours : text
+  predicted_apply : bool
+  measured_apply : bool
+  agree : bool
+}
+
+W ||-[#15803D]-|| M : described by
+W ||-[#15803D]-|{ O : contains
+W ||-[#15803D]-|{ C : contains
+C ||-[#15803D]-o{ O : places
+W ||-[#C2410C]-o{ R : measured in
+R }|-[#6D28D9]-|| CC : median per cell
+CC }|-[#6D28D9]-|| B : combined into options
+W ||-[#6D28D9]-o{ S : price sensitivity
+W ||-[#1D4ED8]-o{ VD : validated in
+VD }|-[#1D4ED8]-|| VS : summarized into
+W ||-[#1D4ED8]-o{ L : left out in
+
+legend right
+  <color:#15803D><size:16>&#9632;</size></color> input data (generated)
+  <color:#C2410C><size:16>&#9632;</size></color> measured runs (raw)
+  <color:#6D28D9><size:16>&#9632;</size></color> cost model outputs
+  <color:#1D4ED8><size:16>&#9632;</size></color> framework validation outputs
+endlegend
+@enduml

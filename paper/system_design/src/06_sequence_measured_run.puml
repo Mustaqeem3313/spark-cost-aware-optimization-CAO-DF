@@ -1,0 +1,60 @@
+@startuml 06_sequence_measured_run
+!include _style.iuml
+title CAO-DF - Sequence Diagram: randomized blocks of measured runs (A1 / A2 / E6)
+autonumber "<b>0"
+skinparam sequenceMessageAlign left
+skinparam sequence {
+  ParticipantBorderThickness 1.5
+  LifeLineBorderColor #94A3B8
+  GroupBorderColor #64748B
+  GroupHeaderFontColor #1E293B
+  BoxBorderColor #CBD5E1
+}
+
+box "Experiment layer" #FFF7ED
+  participant "run_a1 / run_a2 /\nrun_validation" as Runner #FFEDD5
+end box
+box "Infrastructure" #EFF6FF
+  participant "spark_config\nget_spark_session()" as Cfg #DBEAFE
+  participant "instrumentation\nrun_and_measure()" as Instr #DBEAFE
+  participant "_ResourceMonitor\n(psutil, 0.2 s)" as Mon #DBEAFE
+end box
+box "Measurement and execution" #F0FDFA
+  participant "sparkMeasure\nStageMetrics" as SM #CCFBF1
+  participant "baseline_pipeline /\ncompaction" as Act #DCFCE7
+  participant "Spark (local[*])" as Spark #CCFBF1
+end box
+database "experiment_results.csv" as Raw #FEF9C3
+
+Runner -[#1D4ED8]> Cfg : create session (AQE off, broadcast -1,\nsparkMeasure JAR attached)
+Cfg --[#1D4ED8]> Runner : SparkSession
+group #FFF7ED session warm-up
+  Runner -[#C2410C]> Spark : run every cell once, untimed, in random order
+end
+group #F8FAFC loop for each block b (A1, A2: 5 blocks; E6: 3 blocks)
+  Runner -[#C2410C]> Runner : shuffle cell order (seed 123 / 456 / 789)
+  group #FFFFFF loop for each cell (workload x setting or stage)
+    Runner -[#0F766E]> Spark : set spark.sql.shuffle.partitions\n(A2 stages: always 200)
+    Runner -[#1D4ED8]> Instr : run_and_measure(action_fn, metadata,\nwarmup_runs=1, measured_runs=1)
+    activate Instr #DBEAFE
+    group #F1F5F9 loop 1 discarded warm-up, then 1 measured run
+      Instr -[#1D4ED8]> Mon : start()
+      Instr -[#0F766E]> SM : begin()
+      Instr -[#15803D]> Act : action_fn()  (timed with perf_counter)
+      activate Act #DCFCE7
+      Act -[#0F766E]> Spark : read Parquet -> filter -> sort-merge join\n-> aggregate -> noop sink\n(or: coalesce + write compacted files)
+      Spark --[#0F766E]> Act : done
+      Act --[#15803D]> Instr : return
+      deactivate Act
+      Instr -[#0F766E]> SM : end(); aggregate_stagemetrics()
+      SM --[#0F766E]> Instr : executor run / CPU time, shuffle bytes,\nspill, GC, tasks
+      Instr -[#1D4ED8]> Mon : stop()
+      Mon --[#1D4ED8]> Instr : avg CPU %, peak memory %
+    end
+    Instr --[#1D4ED8]> Runner : 2 rows (is_warmup flagged)
+    deactivate Instr
+    Runner -[#A16207]> Raw : append_results(): measured row only,\nheader checked against the 34-column schema
+  end
+end
+Runner -[#C2410C]> Runner : summarize_cells(): median, IQR, CV per cell\n(warn when CV > 0.20)
+@enduml

@@ -1,4 +1,4 @@
-﻿#,Phase,Area,Task,Status,Notes
+#,Phase,Area,Task,Status,Notes
 1,0,Research preparation,"Technical understanding (Spark, shuffle, Parquet, cost, break-even)",Done,Phase0_Technical_Understanding.md
 2,1,Literature review,20-30 papers across six themes; gap identified,Done,Literature_Review_Shaikh.docx
 3,1,Literature review,Literature matrix,Done,Literature_Matrix.xlsx
@@ -51,3 +51,4 @@
 50,11,Paper,"Reference verification, similarity check, AI-use disclosure",In progress,References verified; similarity check pending; disclosure drafted
 51,11,Paper,Guide review + revision,Pending,
 52,11,Paper,Reproducibility package + final tag; submit by 15 Nov,Pending,Deadline 15 Nov 2026
+53,11,Paper,"System design diagrams (use case, component, class, ERD, 2 sequence, 2 activity, deployment)",Done,"paper/system_design/ (PlantUML src + PNG/SVG/PDF, colour-coded; not in the 8-page paper)"

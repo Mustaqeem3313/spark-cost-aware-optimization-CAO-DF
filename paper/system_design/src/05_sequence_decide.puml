@@ -1,0 +1,67 @@
+@startuml 05_sequence_decide
+!include _style.iuml
+title CAO-DF - Sequence Diagram: getting a recommendation (decision_framework.py ~--decide)
+autonumber "<b>0"
+skinparam sequenceMessageAlign left
+skinparam sequence {
+  ParticipantBorderThickness 1.5
+  LifeLineBorderColor #94A3B8
+  LifeLineBackgroundColor #E0E7FF
+  GroupBorderColor #64748B
+  GroupHeaderFontColor #1E293B
+  BoxBorderColor #CBD5E1
+}
+
+actor "Data engineer" as U #FFEDD5
+box "decision_framework.py" #EFF6FF
+  participant "main()" as Main #DBEAFE
+  participant "training_profiles()" as TP #DBEAFE
+  participant "decide()" as Dec #DBEAFE
+  participant "estimate()" as Est #DBEAFE
+end box
+box "cost_model.py" #F5F3FF
+  participant "cost_model" as CM #EDE9FE
+end box
+box "Data files" #FEFCE8
+  database "experiment_results.csv" as Raw #FEF9C3
+  database "workload_index.csv" as Idx #FEF9C3
+end box
+
+U -[#C2410C]> Main : ~--decide ~--orders ~--files ~--shuffle ~--runs\n[~--proxy P1|P2] [~--delta 0.10]
+activate Main #DBEAFE
+Main -[#1D4ED8]> TP : training_profiles(price, vcpus)
+activate TP #DBEAFE
+TP -[#6D28D9]> CM : load_measured_runs()
+activate CM #EDE9FE
+CM -[#A16207]> Raw : read rows (warm-ups excluded)
+Raw --[#A16207]> CM : measured A1 / A2 runs
+TP -[#6D28D9]> CM : add_costs() -> summarize_cells()\n-> breakeven_table()
+CM --[#6D28D9]> TP : saving s, Copt, Crun_static\nper workload, action, proxy
+deactivate CM
+TP -[#A16207]> Idx : workload_features()
+Idx --[#A16207]> TP : log10 orders, log10 files,\nshuffle fraction
+TP --[#1D4ED8]> Main : profiles (s, r = Copt / Crun_static, features)
+deactivate TP
+
+Main -[#1D4ED8]> Main : features of the new workload =\n(log10 orders, log10 files, shuffle)
+Main -[#1D4ED8]> Dec : decide(profiles, features, N, proxy, delta)
+activate Dec #DBEAFE
+Dec -[#1D4ED8]> Dec : TC(Nothing) = N\n(costs in units of one static run)
+group #F8FAFC loop for each action a in {A1 -> Tune, A2 -> Compact}
+  Dec -[#1D4ED8]> Est : estimate(profiles, a, proxy, features)
+  activate Est #DBEAFE
+  Est -[#1D4ED8]> Est : scale features by study range;\nEuclidean distance;\nnearest workload(s), ties averaged
+  Est --[#1D4ED8]> Dec : Estimate(s_a, r_a, partitions, neighbours)
+  deactivate Est
+  alt #DCFCE7 s_a >= delta (above noise floor)
+    Dec -[#15803D]> Dec : TC(a) = r_a + N (1 - s_a)
+  else #FEE2E2 saving within noise
+    Dec -[#B91C1C]> Dec : action not considered
+  end
+end
+Dec -[#1D4ED8]> Dec : choice = lowest TC;\nexact ties -> Nothing (keep static)
+Dec --[#1D4ED8]> Main : Decision(choice, predicted_tc, estimates)
+deactivate Dec
+Main --[#C2410C]> U : recommendation, predicted TC of each\noption, neighbour workloads used
+deactivate Main
+@enduml

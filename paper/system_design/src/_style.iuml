@@ -1,0 +1,27 @@
+' Shared visual theme for all CAO-DF system design diagrams.
+' Colour key used across diagrams:
+'   blue   #DBEAFE / #1D4ED8  infrastructure, decision core
+'   green  #DCFCE7 / #15803D  workload and input data
+'   orange #FFEDD5 / #C2410C  experiments and measured runs
+'   purple #EDE9FE / #6D28D9  analysis, cost model and validation
+'   yellow #FEF9C3 / #A16207  data files and stores
+'   teal   #CCFBF1 / #0F766E  external systems (Spark, sparkMeasure, AWS prices)
+
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam defaultFontColor #0F172A
+skinparam roundCorner 12
+skinparam ArrowColor #475569
+skinparam ArrowFontColor #334155
+skinparam ArrowFontSize 11
+skinparam ArrowThickness 1.2
+skinparam titleFontSize 18
+skinparam titleFontColor #1E3A8A
+skinparam titleFontStyle bold
+skinparam NoteBackgroundColor #FEF9C3
+skinparam NoteBorderColor #CA8A04
+skinparam LegendBackgroundColor #F8FAFC
+skinparam LegendBorderColor #94A3B8
+skinparam LegendFontSize 12

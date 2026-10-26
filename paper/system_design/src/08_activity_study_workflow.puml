@@ -1,0 +1,59 @@
+@startuml 08_activity_study_workflow
+!include _style.iuml
+title CAO-DF - Activity Diagram: end-to-end study workflow (script per step)
+skinparam activityBorderThickness 1.5
+skinparam activityStartColor #1D4ED8
+skinparam activityEndColor #1D4ED8
+skinparam swimlaneTitleFontSize 15
+skinparam swimlaneTitleFontStyle bold
+
+|#EFF6FF|Setup|
+start
+#DBEAFE:Record machine configuration
+(environment_report.py);
+#DBEAFE:Check imports, Java, Spark session, pipeline
+(verify_phase2_setup.py);
+
+|#F0FDF4|Data|
+#DCFCE7:Generate study workloads, seed 42
+(workload_generator.py);
+#DCFCE7:E1: shuffle-volume gate
+(verify_workloads.py);
+
+|#FFF7ED|Experiments|
+#FFEDD5:E2: exploratory partition sweep
+(explore_partition_curve.py);
+#FFEDD5:E3: formal A1 matrix,
+8 settings x 4 workloads x 5 blocks = 160 runs
+(run_a1_experiments.py);
+#FFEDD5:E4: A2 pilot gate, 3 blocks
+(run_a2_experiments.py ~--pilot);
+#FFEDD5:E5: formal A2 matrix,
+6 workloads x 3 stages x 5 blocks = 90 runs
+(run_a2_experiments.py);
+
+|#F5F3FF|Analysis|
+#EDE9FE:Trimmed outlier check on A1
+(robustness_check.py);
+#EDE9FE:Cost model: P1 / P2 costs, N*, TC at N = 1, 5, 10, 50,
+price x0.5 / x1 / x1.5 (cost_model.py);
+
+|#F0FDF4|Data|
+#DCFCE7:Generate 4 unseen validation workloads
+(workload_generator.py ~--validation);
+
+|#FFF7ED|Experiments|
+#FFEDD5:E6: validation, 4 workloads x 10 stages
+x 3 blocks = 120 runs (run_validation.py);
+
+|#F5F3FF|Analysis|
+#EDE9FE:Decision rule + validation against static,
+performance-only and oracle; leave-one-out
+(decision_framework.py);
+#EDE9FE:Paper figures (make_figures.py);
+
+|#FDF2F8|Paper|
+#FCE7F3:Write results from processed CSVs only;
+#FCE7F3:Compile IEEEtran paper (8 pages);
+stop
+@enduml

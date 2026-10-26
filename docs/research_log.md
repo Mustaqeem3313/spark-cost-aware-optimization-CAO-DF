@@ -336,6 +336,8 @@ Oracle mean reduction: 49.7 % (P1), 72.6 % (P2). Win/tie uses |ΔTC| ≤ δ · T
 | 2026-10-21 | No extra 500-file level | Pilot gate passed; master plan says add only if it fails |
 | 2026-10-21 | Same GitHub repository for all phases | Single reproducible artifact; tags per milestone |
 | 2026-10-23 | Paper in IEEEtran conference format with the standard experimental structure: Introduction (RQs, H1/H2) → Related Work → Problem/Cost Model → Framework → Experimental Setup → Experimental Results → Discussion → Threats to Validity (internal/construct/external) → Conclusion; ≤ 8 pages incl. references | Author's request; IEEE empirical-paper convention; tables captioned above, figures below |
+| 2026-10-26 | System design diagrams as PlantUML source + PNG/SVG/PDF in `paper/system_design/` (9 diagrams, colour-coded) | Author's choice; text sources are version-controlled and diffable; not included in the 8-page paper |
+| 2026-10-26 | Paper experiment labels corrected: A1 analysis = E3; E1, E2, E4 named as preparatory | Matches the scripts and the research log (E1 gate, E2 sweep, E3 formal A1, E4 A2 pilot, E5 formal A2, E6 validation) |
 | 2026-10-23 | H1 verdict: supported for A2, only partly for A1 (best setting and speed-up differ, but the decision to tune does not) | Formal per-pair CIs deferred to Phase 10 |
 
 ## 6. Open questions

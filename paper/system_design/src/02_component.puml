@@ -1,0 +1,90 @@
+@startuml 02_component
+!pragma layout smetana
+!include _style.iuml
+title CAO-DF - Component Diagram (src/ modules and data stores)
+skinparam componentStyle rectangle
+skinparam packageFontSize 14
+skinparam componentBorderThickness 1.5
+
+package "Infrastructure" #EFF6FF;line:1D4ED8 {
+  [spark_config.py\nSparkSession factory\n(AQE off, broadcast -1, driver 3 GB)] as SparkCfg #DBEAFE;line:1D4ED8
+  [paths.py\nproject paths] as Paths #DBEAFE;line:1D4ED8
+  [instrumentation.py\nrun_and_measure(),\nappend_results()] as Instr #DBEAFE;line:1D4ED8
+}
+
+package "Workload layer" #F0FDF4;line:15803D {
+  [workload_generator.py\nsynthetic orders + customers] as Gen #DCFCE7;line:15803D
+  [baseline_pipeline.py\nfilter -> sort-merge join\n-> aggregate -> noop sink] as Pipe #DCFCE7;line:15803D
+  [compaction.py\ncoalesce to ceil(size / 128 MB)] as Compact #DCFCE7;line:15803D
+}
+
+package "Experiment layer" #FFF7ED;line:C2410C {
+  [experiment_runner.py\nrandomized blocks (A1)] as Runner #FFEDD5;line:C2410C
+  [explore_partition_curve.py\nE2 sweep] as Sweep #FFEDD5;line:C2410C
+  [run_a1_experiments.py\nE3 formal A1] as RunA1 #FFEDD5;line:C2410C
+  [run_a2_experiments.py\nE4 pilot, E5 formal A2] as RunA2 #FFEDD5;line:C2410C
+  [run_validation.py\nE6 unseen workloads] as RunVal #FFEDD5;line:C2410C
+}
+
+package "Analysis layer" #F5F3FF;line:6D28D9 {
+  [cost_model.py\nP1/P2 costs, TC, N*] as Cost #EDE9FE;line:6D28D9
+  [decision_framework.py\nCAO-DF rule, validation, LOO] as DF #EDE9FE;line:6D28D9
+  [robustness_check.py\ntrimmed A1 check] as Robust #EDE9FE;line:6D28D9
+  [make_figures.py\npaper figures] as Figs #EDE9FE;line:6D28D9
+}
+
+database "data/generated/\nParquet + manifest.json" as DataStore #FEF9C3;line:A16207
+database "experiments/configs/\nworkload_index.csv,\nvalidation_index.csv" as IndexStore #FEF9C3;line:A16207
+database "results/raw/\nexperiment_results.csv" as RawStore #FEF9C3;line:A16207
+database "results/processed/\nsummary CSVs" as ProcStore #FEF9C3;line:A16207
+folder "paper/figures/\nresults/figures/" as FigStore #FEF9C3;line:A16207
+node "sparkMeasure 0.28\n(JVM listener)" as SM #CCFBF1;line:0F766E
+
+Gen -[#15803D]-> DataStore : writes
+Gen -[#15803D]-> IndexStore : writes
+Gen .[#94A3B8].> SparkCfg
+
+Sweep -[#C2410C]-> Runner
+RunA1 -[#C2410C]-> Runner
+Runner -[#C2410C]-> Instr
+RunA2 -[#C2410C]-> Instr
+RunVal -[#C2410C]-> Instr
+RunA2 -[#C2410C]-> Compact
+RunVal -[#C2410C]-> Compact
+RunA2 .[#94A3B8].> Runner : summarize_cells()
+RunVal .[#94A3B8].> Runner : summarize_cells()
+Instr -[#1D4ED8]-> Pipe : action_fn() ->\nexecute_pipeline()
+Instr -[#0F766E]-> SM : stage metrics
+Instr .[#94A3B8].> SparkCfg
+Instr -[#15803D]-> IndexStore : load_and_cache_workloads()
+Pipe -[#15803D]-> DataStore : reads
+Compact -[#15803D]-> DataStore : reads / writes
+Instr -[#A16207,thickness=2]-> RawStore : appends measured rows
+
+Cost -[#6D28D9]-> RawStore : reads
+Cost -[#6D28D9]-> ProcStore : cost_per_cell, breakeven_table,\ncost_sensitivity
+DF -[#6D28D9]-> Cost : reuses cost functions
+DF -[#6D28D9]-> IndexStore : reads features
+DF -[#6D28D9]-> RawStore : reads E6 runs
+DF -[#6D28D9]-> ProcStore : validation_*.csv,\nframework_loo.csv
+Robust -[#6D28D9]-> RawStore : reads
+Robust .[#94A3B8].> RunA1 : best_config_per_workload()
+Figs .[#94A3B8].> Cost
+Figs .[#94A3B8].> DF
+Figs -[#6D28D9]-> RawStore : reads
+Figs -[#6D28D9]-> ProcStore : reads
+Figs -[#6D28D9]-> FigStore : writes
+Paths <.[#94A3B8]. Instr
+Paths <.[#94A3B8]. Cost
+Paths <.[#94A3B8]. DF
+
+legend right
+  <color:#1D4ED8><size:16>&#9632;</size></color> infrastructure
+  <color:#15803D><size:16>&#9632;</size></color> workload layer
+  <color:#C2410C><size:16>&#9632;</size></color> experiment layer
+  <color:#6D28D9><size:16>&#9632;</size></color> analysis layer
+  <color:#A16207><size:16>&#9632;</size></color> data stores
+  <color:#0F766E><size:16>&#9632;</size></color> external library
+  dashed = uses / configures
+endlegend
+@enduml

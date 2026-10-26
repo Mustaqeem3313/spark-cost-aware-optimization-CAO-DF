@@ -1,0 +1,37 @@
+@startuml 09_deployment
+!pragma layout smetana
+!include _style.iuml
+title CAO-DF - Deployment Diagram (study machine)
+skinparam nodeBorderThickness 1.5
+skinparam artifactBorderThickness 1.2
+
+node "Study laptop\nIntel Core i5-1335U, 10 cores / 12 threads, 15.7 GB RAM\nWindows 11, NVMe SSD" as Laptop #F8FAFC;line:475569 {
+  node "Python 3.11.9 venv" as Py #EFF6FF;line:1D4ED8 {
+    artifact "src/*.py\n(CAO-DF code)" as Code #DBEAFE;line:1D4ED8
+    artifact "PySpark 3.5.1" as PySpark #DBEAFE;line:1D4ED8
+    artifact "pandas, numpy, pyarrow,\nmatplotlib, psutil" as Libs #DBEAFE;line:1D4ED8
+  }
+  node "JVM (Temurin JDK 17)" as JVM #F0FDFA;line:0F766E {
+    node "Spark driver + executor\nlocal[*] (12 task slots), driver memory 3 GB,\nAQE off, broadcast join threshold -1" as Driver #CCFBF1;line:0F766E
+    artifact "sparkMeasure 0.28 JAR" as SMJar #CCFBF1;line:0F766E
+  }
+  node "Hadoop winutils\n(C:/hadoop/bin)" as Hadoop #F1F5F9;line:475569
+  folder "NTFS file system" as FS #FEFCE8;line:A16207 {
+    folder "data/generated\n(Parquet)" as Data #FEF9C3;line:A16207
+    folder "Spark temp dir\n(shuffle files)" as Tmp #FEF9C3;line:A16207
+    folder "results/\n(CSV, figures)" as Res #FEF9C3;line:A16207
+  }
+}
+
+cloud "AWS EC2 on-demand price\n(m6i, Mumbai, 0.0505 USD / vCPU-hour)\nused only as a constant" as Price #FFEDD5;line:C2410C
+
+Code -[#1D4ED8]-> PySpark
+Code -[#1D4ED8]-> Libs
+PySpark -[#0F766E,thickness=2]-> Driver : Py4J
+Driver -[#0F766E]-> SMJar : listener
+Driver -[#475569]-> Hadoop : Windows file access
+Driver -[#A16207]-> Data : read / write Parquet
+Driver -[#A16207]-> Tmp : shuffle write / read
+Code -[#A16207]-> Res : CSV, figures
+Price .[#C2410C].> Code : price constant
+@enduml

@@ -1,0 +1,55 @@
+@startuml 07_activity_decision_rule
+!include _style.iuml
+title CAO-DF - Activity Diagram: the decision rule
+skinparam activityBorderThickness 1.5
+skinparam activityDiamondBackgroundColor #FEF9C3
+skinparam activityDiamondBorderColor #A16207
+skinparam activityStartColor #1D4ED8
+skinparam activityEndColor #1D4ED8
+skinparam activityBarColor #475569
+
+start
+#FFEDD5:Input: workload features (orders, files, shuffle fraction),
+expected runs N, cost proxy (P1 / P2), noise floor delta = 0.10;
+#EDE9FE:Load reference table of measured study workloads
+(saving s and one-time cost ratio r = Copt / Crun_static
+per action and proxy);
+#DBEAFE:Scale features by their range over the study workloads;
+#DBEAFE:TC(Nothing) = N  (costs in units of one static run);
+
+fork
+  #DCFCE7:A1 Tune: find nearest study workload(s);
+  #DCFCE7:Copy s_A1, r_A1 (averaged if tied);
+  if (s_A1 >= delta?) then (yes)
+    #DCFCE7:TC(Tune) = r_A1 + N (1 - s_A1);
+  else (no)
+    #FEE2E2:drop Tune (saving is within noise);
+  endif
+fork again
+  #CCFBF1:A2 Compact: find nearest study workload(s);
+  #CCFBF1:Copy s_A2, r_A2 (averaged if tied);
+  if (s_A2 >= delta?) then (yes)
+    #CCFBF1:TC(Compact) = r_A2 + N (1 - s_A2);
+  else (no)
+    #FEE2E2:drop Compact (saving is within noise);
+  endif
+end fork
+
+#DBEAFE:Choose the option with the lowest TC
+(an exact tie goes to Nothing);
+
+switch (Decision)
+case (Nothing)
+  #F1F5F9:Keep the static setup:
+  200 partitions, no compaction;
+case (Tune)
+  #DCFCE7:Search the 8 partition settings once (Copt),
+  then run with the best one;
+case (Compact)
+  #CCFBF1:Run the compaction job once (Copt),
+  then run on the compacted files;
+endswitch
+#FFEDD5:Report the decision, the predicted TC of each option
+and the neighbour workloads used;
+stop
+@enduml

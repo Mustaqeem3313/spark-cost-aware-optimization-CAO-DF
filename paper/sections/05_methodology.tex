@@ -63,7 +63,11 @@ Use & Workload & Orders & Files & Shuffled & MB \\
 \end{table}
 
 \subsection{Experiments}
-\textbf{E1--E4 (A1, partition tuning).} Each A1 workload was run with 1, 2, 4, 8, 16, 50, 200
+Three preparatory experiments fixed the design and are not used in the analysis: a check that
+the workload features really change shuffle volume (E1), an exploratory partition sweep (E2)
+and an A2 pilot (E4).
+
+\textbf{E3 (A1, partition tuning).} Each A1 workload was run with 1, 2, 4, 8, 16, 50, 200
 and 400 shuffle partitions. The input was cached in memory so that only the shuffle changes
 between settings. 160 runs.
 
