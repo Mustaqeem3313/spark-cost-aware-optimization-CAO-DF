@@ -69,10 +69,13 @@ Before any timed step: connect AC power, select the best-performance power mode 
 | 11. Framework validation runs (E6) | `python src\run_validation.py 2>&1 \| Tee-Object logs\validation.log` | `results/raw/experiment_results.csv` (`VAL` rows), `results/processed/validation_cell_summary.csv` |
 | 12. Decision framework + validation (no Spark) | `python src\decision_framework.py [--delta 0.10]` | `validation_decisions.csv`, `validation_summary.csv`, `framework_loo.csv` |
 | Ask the framework for one workload | `python src\decision_framework.py --decide --orders 500000 --files 25 --shuffle 0.5 --runs 5` | printed choice: Nothing / Tune / Compact |
+| ...or answer five questions instead | `python src\decision_framework.py --interactive` | same printout; warns if inputs lie outside the study range |
 | 13. Paper figures (no Spark) | `python src\make_figures.py` | `paper/figures/fig_*.pdf`, `results/figures/fig_*.png` |
 | 14. Statistical analysis (no Spark) | `python src\stats_analysis.py` | `results/processed/stats_*.csv` (bootstrap CIs, effect sizes, verdicts) |
 | 15. Analysis notebook | `python analysis\build_notebook.py`, then `jupyter nbconvert --to notebook --execute --inplace analysis\analysis.ipynb` | `analysis/analysis.ipynb`, `analysis/figures/fig*.png` |
-| Tests | `python -m unittest discover -s tests -v` | 13 tests |
+| 16. Reference check (internet) | `python tools\check_references.py` | DOI/title/pages vs Crossref and arXiv; URL status |
+| 17. Similarity check (internet on first run) | `python tools\similarity_check.py` | `docs/similarity_report.md` (local proxy, not Turnitin) |
+| Tests | `python -m unittest discover -s tests -v` | 20 tests |
 
 Costs are estimated from published AWS EC2 on-demand pricing, never billed; the price, proxies and assumptions are documented in [`Cost_Model_Assumptions.md`](Cost_Model_Assumptions.md).
 
@@ -108,7 +111,8 @@ src/
   stats_analysis.py           Phase 10: bootstrap CIs, effect sizes, hypothesis verdicts
   environment_report.py       generates environment.md
 analysis/                     build_notebook.py -> analysis.ipynb (+ HTML, figures)
-tests/                        unit tests for stats_analysis.py
+tests/                        unit tests for stats_analysis.py and decision_framework.py
+tools/                        check_references.py, similarity_check.py (paper checks)
 docs/research_log.md          dated record of runs, findings, limitations and decisions
 experiments/configs/          workload index
 results/raw/                  per-run measurements (append-only)

@@ -3,6 +3,14 @@
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
 
+% pdfLaTeX (Overleaf, IEEE) uses Times via IEEEtran; XeTeX/Tectonic needs a metric-identical Times clone.
+\usepackage{iftex}
+\ifXeTeX
+  \usepackage{fontspec}
+  \setmainfont{texgyretermes}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold,
+    ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\fi
+
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
@@ -13,6 +21,9 @@
 \usepackage{multirow}
 \usepackage{url}
 \def\UrlBreaks{\do\/\do-\do.\do_}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+\hypersetup{pdfauthor={Shaikh Mustaqeem Ishratali},
+  pdfkeywords={Apache Spark, cost-aware optimization, break-even analysis, shuffle partitions, file compaction}}
 
 % Drafting marker: every \tbd must be resolved before submission.
 \newcommand{\tbd}[1]{\textcolor{red}{[TBD: #1]}}
@@ -27,14 +38,11 @@
 
 \title{A Cost-Aware Decision Framework for Adaptive Optimization of Apache Spark Data Pipelines}
 
-\author{\IEEEauthorblockN{Mustaqeem Shaikh}
-\IEEEauthorblockA{\textit{\tbd{Department}} \\
-\textit{\tbd{Institution}}\\
-\tbd{City, Country} \\
-\tbd{email}}
-% \and
-% \IEEEauthorblockN{\tbd{Guide name -- confirm co-authorship}}
-% \IEEEauthorblockA{...}
+\author{\IEEEauthorblockN{Shaikh Mustaqeem Ishratali}
+\IEEEauthorblockA{\textit{Department of Computer Science} \\
+\textit{AKI's Poona College of Arts, Science and Commerce}\\
+Pune, India \\
+mustaqeemshaikh7862@gmail.com}
 }
 
 \maketitle

@@ -81,7 +81,7 @@ Optimizing a Spark pipeline is not free: tuning shuffle partitions or compacting
 |---|---|
 | Total phases | **12** (Phase 0 – Phase 11) |
 | Completed | **11** (Phases 0 – 10) |
-| In progress | **1** — Phase 11 (paper finalisation: author details, similarity check, submission) |
+| In progress | **1** — Phase 11 (paper final; guide review, PDF eXpress, push and submission left) |
 | Not started | **0** |
 | Overall progress | `███████████░` **11 / 12 complete (92 %)** |
 | Experimental data collected | **Formal A1** (E3, 160 runs, tag `a1-formal-v2`) · **Formal A2** (E5, 90 runs, tag `a2-formal-v2`) · A2 pilot (E4, 54 runs) · **Framework validation** (E6, 120 runs) |
@@ -888,15 +888,16 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 
 #### Phase 11 — Paper, revision, submission
 - [x] Draft §§ 1–5 early (they do not depend on results); write §§ 6–8 directly from Phase 10 outputs.
-- [ ] Similarity check; AI-assistance disclosure; reference verification.
-- [ ] IEEE template, PDF eXpress validation, reproducibility package, submission.
+- [x] Similarity check (`docs/similarity_report.md`, local proxy: 0.0 % vs cited abstracts); AI-assistance disclosure in the Acknowledgment (IEEE policy); reference verification (`tools/check_references.py`, 32/32).
+- [x] IEEE template, author details, clickable links, final polish (8 pages); tag `v1.0-paper`.
+- [ ] Guide review; PDF eXpress validation (needs the venue's conference ID); push; submission (author).
 - **Deliverable:** submission-ready paper + package.
 
 ### 17.3 Definition of Done (end of project)
 
 | # | Deliverable | Status |
 |---|---|---|
-| 1 | Research paper (submission-ready, IEEE format) | ◐ (8-page draft; author details pending) |
+| 1 | Research paper (submission-ready, IEEE format) | ✅ (27 Oct; 8 pages, final; guide review + submission by author) |
 | 2 | Experimental framework (Python + PySpark) | ✅ |
 | 3 | Workload generator (seeded, reproducible) | ✅ |
 | 4 | `experiment_results.csv` (raw measurements, every run) | ✅ (formal A1 + A2 + E6 validation) |
@@ -929,7 +930,7 @@ Phase  7 A2 compaction         ████████████ 100 %  ✅ (
 Phase  8 Cost model            ████████████ 100 %  ✅ (23 Oct)
 Phase  9 Decision framework    ████████████ 100 %  ✅ (23 Oct)
 Phase 10 Analysis & figures    ████████████ 100 %  ✅ (26 Oct)
-Phase 11 Paper & submission    ████████░░░░  ~70 %  ◐ (draft done)
+Phase 11 Paper & submission    ███████████░  ~95 %  ◐ (final paper; review + submission left)
 ```
 
 > **Reading the numbers.** By *count* the project is two-thirds through its phases, but the remaining phases (cost model, framework, analysis, paper) carry most of the intellectual and writing effort.

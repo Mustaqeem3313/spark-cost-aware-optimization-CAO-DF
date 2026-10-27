@@ -338,6 +338,31 @@ checks pass and every point value reproduces Phases 7–9.
 
 ---
 
+## 3e. Paper finalisation (Phase 11, 2026-10-27)
+
+- **Author block** filled: Shaikh Mustaqeem Ishratali, Department of Computer Science, AKI's Poona
+  College of Arts, Science and Commerce, Pune, India; mustaqeemshaikh7862@gmail.com. Guide
+  Dr. Reshma Kadam thanked in the Acknowledgment (not a co-author; author's choice). No `\tbd` left.
+- **AI-use disclosure** moved into the Acknowledgment, as IEEE requires (name the tool, the sections
+  and the extent of use): GitHub Copilot (agent mode, Anthropic Claude models) for code, plotting
+  code, system diagrams, draft/edited text in all sections and reference checking.
+- **Links:** `hyperref` added, so the repository URL and all reference URLs are clickable; all 7
+  URLs answer HTTP 200. Body font set to TeX Gyre Termes (metric clone of IEEE's Times) under
+  XeTeX/Tectonic; pdfLaTeX/Overleaf still uses Times. Still 8 pages.
+- **Reference verification** re-run with `tools/check_references.py` (Crossref, arXiv, URL check):
+  32/32 consistent; CherryPick (no DOI) checked by hand on the USENIX page.
+- **Similarity check** (`tools/similarity_check.py`, local 8-word-run proxy, not Turnitin):
+  0.0 % overlap with the 25 cited-work abstracts available in OpenAlex; 1.2 % with all sources,
+  all from the author's own planning documents. Report: `docs/similarity_report.md`.
+- **Polish:** H1 trend now states the point estimate (7.7 points, CI 4.4-17.8); validation
+  sentence on the two compaction misses reworded; Wilcoxon note made exact (smallest two-sided
+  p = 0.0625 with n = 5); abstract and introduction state the P1 / P2 scope of "14 of 16".
+- **Decision tool:** `src/decision_framework.py --interactive` asks five questions (rows, files,
+  shuffle share, future runs N, proxy), validates answers and warns when inputs lie outside the
+  study range; `tests/test_decision_framework.py` (7 tests).
+
+---
+
 ## 4. Limitations register (for the Threats to Validity section)
 
 | # | Limitation | Affects | Mitigation / wording |
@@ -376,12 +401,16 @@ checks pass and every point value reproduces Phases 7–9.
 | 2026-10-26 | H1 (A1) verdict revised to "supported by the pre-registered test; the decision to tune does not change across workloads" (author's choice) | Phase 10: 1/6 pairs (wall) and 4/6 (executor) meet the criterion (F-ST-2) |
 | 2026-10-26 | Statistics by block bootstrap (10 000, seed 2026) instead of p-values; notebook generated from `analysis/build_notebook.py` | n = 5 blocks cannot reach p < 0.0625; generator keeps text and figures reproducible |
 
+| 2026-10-27 | AI-use disclosure placed in the Acknowledgment, naming GitHub Copilot and the sections/artifacts it helped with | IEEE author guidelines on AI-generated content |
+| 2026-10-27 | Extended (long-form) report postponed by the author | Author will decide later; 8-page IEEE paper is the deliverable |
+| 2026-10-27 | Guide thanked, not listed as co-author | Author's choice |
+
 ## 6. Open questions
 
 - ~~Cloud pricing basis~~ — resolved 2026-10-22/23 (EC2 m6i, Mumbai).
 - Cost proxy: wall-clock × cores vs executor time (F-A1-4 shows they disagree on the A1 optimum).
 - ~~A1 `Copt` definition~~ — resolved 2026-10-23 (search primary, rule sensitivity).
-- Licence; co-authorship of the guide.
+- Licence (co-authorship resolved 2026-10-27: guide thanked only).
 
 - **2026-10-22 — Pricing basis:** AWS EC2 on-demand vCPU-hour chosen by the author (simplest, most transparent; Glue/DBU may appear only as discussion).
 - **2026-10-23 — A1 Copt definition:** primary = search-based (one measured run of each candidate shuffle-partition setting, i.e. the cost of discovering the optimum); sensitivity = rule-based lower bound (Copt ~ 0, N* = 1). Chosen by the author; mirrors A2 where Copt is the measured compaction job.

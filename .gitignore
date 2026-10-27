@@ -45,3 +45,5 @@ tmp/
 .idea/
 .DS_Store
 Thumbs.db
+# similarity-check download cache
+tools/.cache/

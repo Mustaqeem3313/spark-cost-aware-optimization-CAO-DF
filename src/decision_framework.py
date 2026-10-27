@@ -42,6 +42,7 @@ Usage::
     python src/decision_framework.py
     python src/decision_framework.py --delta 0.05
     python src/decision_framework.py --decide --orders 800000 --files 30 --shuffle 0.6 --runs 10
+    python src/decision_framework.py --interactive
 """
 
 from __future__ import annotations
@@ -347,6 +348,65 @@ def plot_validation(table: pd.DataFrame, proxy: str, out_base: Path) -> None:
     plt.close(fig)
 
 
+# --- Interactive use --------------------------------------------------------------
+
+def ask(prompt: str, cast, default=None, check=lambda v: True, error: str = "invalid value",
+        reader=input, writer=print):
+    """Ask until the answer casts and passes ``check``; an empty answer takes ``default``."""
+    suffix = f" [{default}]" if default is not None else ""
+    while True:
+        text = reader(f"{prompt}{suffix}: ").strip()
+        if not text and default is not None:
+            return default
+        try:
+            value = cast(text.replace(",", "").replace("_", ""))
+        except ValueError:
+            writer(f"  {error}")
+            continue
+        if check(value):
+            return value
+        writer(f"  {error}")
+
+
+def ask_workload(profiles: pd.DataFrame, reader=input, writer=print) -> dict:
+    """Collect the four inputs of the rule (and the cost proxy) from the user."""
+    writer("CAO-DF decision tool -- answer five questions about the pipeline.\n")
+    orders = ask("1. How many rows does the main (orders) table have", int,
+                 check=lambda v: v > 0, error="enter a whole number above 0", reader=reader, writer=writer)
+    files = ask("2. How many input files is that table stored in", int,
+                check=lambda v: v > 0, error="enter a whole number above 0", reader=reader, writer=writer)
+    shuffle = ask("3. What share of the rows reaches the join/aggregation shuffle (0-1)", float,
+                  check=lambda v: 0 < v <= 1, error="enter a number above 0 and at most 1",
+                  reader=reader, writer=writer)
+    runs = ask("4. How many more times will the pipeline run (N)", int,
+               check=lambda v: v > 0, error="enter a whole number above 0", reader=reader, writer=writer)
+    proxy = ask("5. Cost proxy: P1 = whole machine, P2 = executor time only", str.upper, default="P1",
+                check=lambda v: v in PROXIES, error="enter P1 or P2", reader=reader, writer=writer)
+
+    study = profiles.drop_duplicates("workload_id")
+    outside = []
+    if not study["orders"].min() <= orders <= study["orders"].max():
+        outside.append(f"rows ({study['orders'].min():,}-{study['orders'].max():,})")
+    if not study["files"].min() <= files <= study["files"].max():
+        outside.append(f"files ({study['files'].min()}-{study['files'].max()})")
+    if outside:
+        writer(f"\nNote: {' and '.join(outside)} lie outside the measured study range; "
+               "the estimate is extrapolated from the nearest study workload.")
+    return {"orders": orders, "files": files, "shuffle": shuffle, "runs": runs, "proxy": proxy}
+
+
+def print_decision(decision: Decision, n_runs: int, writer=print) -> None:
+    writer(f"Recommendation for N = {n_runs}: {decision.choice}")
+    for option, tc in decision.predicted_tc.items():
+        writer(f"  predicted total cost of {option:<8}: {tc:6.2f} static runs")
+    for action, est in decision.estimates.items():
+        writer(f"  {ACTIONS[action]:<8} estimated from {', '.join(est.neighbours)}: "
+               f"saving {est.saving_pct:.1%}, one-time cost {est.copt_ratio:.2f} static runs")
+    skipped = [ACTIONS[a] for a in ACTIONS if ACTIONS[a] not in decision.predicted_tc]
+    if skipped:
+        writer(f"  ({', '.join(skipped)} left out: estimated saving below the noise floor)")
+
+
 # --- Entry point ------------------------------------------------------------------
 
 def main() -> None:
@@ -361,22 +421,31 @@ def main() -> None:
     parser.add_argument("--shuffle", type=float, help="fraction of rows that reach the shuffle (with --decide)")
     parser.add_argument("--runs", type=int, help="expected future runs N (with --decide)")
     parser.add_argument("--proxy", choices=PROXIES, default="P1", help="cost proxy (with --decide)")
+    parser.add_argument("--interactive", action="store_true",
+                        help="ask for the workload details and print a decision")
     args = parser.parse_args()
 
     profiles = training_profiles(args.price, args.vcpus)
 
+    if args.interactive:
+        try:
+            answers = ask_workload(profiles)
+        except (EOFError, KeyboardInterrupt):
+            print("\nCancelled.")
+            return
+        args.decide = True
+        args.orders, args.files, args.shuffle = answers["orders"], answers["files"], answers["shuffle"]
+        args.runs, args.proxy = answers["runs"], answers["proxy"]
+        print()
+
     if args.decide:
         if None in (args.orders, args.files, args.shuffle, args.runs):
             parser.error("--decide needs --orders, --files, --shuffle and --runs")
+        if args.orders <= 0 or args.files <= 0 or not 0 < args.shuffle <= 1 or args.runs <= 0:
+            parser.error("--orders, --files and --runs must be above 0; --shuffle must be in (0, 1]")
         features = pd.Series({"log_orders": math.log10(args.orders), "log_files": math.log10(args.files),
                               "shuffle_fraction": args.shuffle})
-        decision = decide(profiles, features, args.runs, args.proxy, args.delta)
-        print(f"Recommendation for N = {args.runs}: {decision.choice}")
-        for option, tc in decision.predicted_tc.items():
-            print(f"  predicted total cost of {option:<8}: {tc:6.2f} static runs")
-        for action, est in decision.estimates.items():
-            print(f"  {ACTIONS[action]:<8} estimated from {', '.join(est.neighbours)}: "
-                  f"saving {est.saving_pct:.1%}, one-time cost {est.copt_ratio:.2f} static runs")
+        print_decision(decide(profiles, features, args.runs, args.proxy, args.delta), args.runs)
         return
 
     table = validate(profiles, load_validation_cells(args.price, args.vcpus), args.delta)

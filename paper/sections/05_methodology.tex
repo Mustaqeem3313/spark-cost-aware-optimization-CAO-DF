@@ -93,8 +93,8 @@ spilled bytes. Each setting is summarized by its median over blocks, with the in
 range (IQR) and the coefficient of variation (CV); a cell with CV above 0.2 is marked as noisy.
 Times were turned into costs with (\ref{eq:p1})--(\ref{eq:p2}), using the on-demand price of
 an Amazon EC2 m6i instance in the Mumbai region, \$0.0505 per vCPU-hour (accessed 23 Oct 2026)
-\cite{aws2026ec2pricing}, and $v = 12$ vCPUs for P1. With only 5 blocks, a Wilcoxon
-signed-rank test cannot reach $p < 0.0625$, so we report medians, effect sizes and block
-bootstrap 95\,\% confidence intervals (10\,000 resamples) instead of $p$-values. To check robustness, we repeated the
-analysis with the price halved and increased by half (P1 and P2), and with the slowest run of
-each noisy cell removed.
+\cite{aws2026ec2pricing}, and $v = 12$ vCPUs for P1. With only 5 blocks, the smallest
+two-sided $p$-value a Wilcoxon signed-rank test can give is 0.0625, so we report medians,
+speed-up ratios and block-bootstrap 95\,\% confidence intervals (10\,000
+resamples) instead of $p$-values. To check robustness, we repeated the analysis with the price
+halved and raised by half (P1 and P2), and with the slowest run of each noisy cell removed.

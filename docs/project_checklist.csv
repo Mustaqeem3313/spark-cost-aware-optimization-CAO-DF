@@ -48,7 +48,9 @@
 47,11,Paper,"Draft VI Results (A1, A2, break-even, validation)",Done,"paper/sections/06_results.tex (Figs 2-7, Tables III-IV, H1/H2 verdicts)"
 48,11,Paper,Draft VII Discussion + Threats to validity,Done,"07_discussion.tex, 08_threats.tex (L1-L13)"
 49,11,Paper,Draft VIII Conclusion + Abstract,Done,"8 pages incl. references; PDF/DOCX exported"
-50,11,Paper,"Reference verification, similarity check, AI-use disclosure",In progress,References verified; similarity check pending; disclosure drafted
+50,11,Paper,"Reference verification, similarity check, AI-use disclosure",Done,"tools/check_references.py 32/32; docs/similarity_report.md 0.0% vs cited abstracts; disclosure in Acknowledgment (IEEE policy)"
 51,11,Paper,Guide review + revision,Pending,
-52,11,Paper,Reproducibility package + final tag; submit by 15 Nov,Pending,Deadline 15 Nov 2026
+52,11,Paper,Reproducibility package + final tag; submit by 15 Nov,In progress,"Tag v1.0-paper created locally; push + venue submission by author (deadline 15 Nov 2026)"
 53,11,Paper,"System design diagrams (use case, component, class, ERD, 2 sequence, 2 activity, deployment)",Done,"paper/system_design/ (PlantUML src + PNG/SVG/PDF, colour-coded; not in the 8-page paper)"
+54,11,Paper,"Author details, links, final polish",Done,"Author block, guide acknowledgment, clickable links (hyperref), Times-metric font; 8 pages"
+55,9,Framework,Interactive decision tool,Done,"decision_framework.py --interactive; tests/test_decision_framework.py"

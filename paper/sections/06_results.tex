@@ -125,9 +125,9 @@ losses. Its choices changed with $N$ as the model predicts: nothing or cheap com
 runs, and tuning for many runs.
 
 CAO-DF lost to static only twice, both under P1 at $N = 1$, when it chose compaction for the
-500K/25-file and 2M/5-file workloads (regret 14.5\,\% and 23.9\,\%). Compaction cut their
-wall-clock time by only $-1.7\,\%$ and 3.3\,\%, while the nearest study workloads suggested
-34\,\% and 23\,\%. Estimated tuning savings were within 3.4 points of the measured ones on
+500K/25-file and 2M/5-file workloads (regret 14.5\,\% and 23.9\,\%). On these two workloads
+compaction made the run 1.7\,\% slower and only 3.3\,\% faster, while the nearest study
+workloads suggested savings of 34\,\% and 23\,\%. Estimated tuning savings were within 3.4 points of the measured ones on
 every workload, and the best partition count was again small (2 or 4). In a leave-one-out
 test on the study workloads, the rule agreed with the hindsight choice in 80\,\% of cases
 (64/80); all misses were on the two single-file A2 workloads, whose nearest neighbour has 10
@@ -165,7 +165,7 @@ CAO-DF's choice: N = nothing, T = tune, C = compact. Bars above the red line los
 \subsection{Hypotheses}
 \textbf{H1} is \emph{supported for compaction} on wall time: its benefit ranged from none on
 single-file input to 66\,\% on fragmented input, and it grew with the number of files for
-large data (10$\to$50 files added 4.4--17.8 points, 95\,\% CI) but saturated at 10 files for
+large data (going from 10 to 50 files added 7.7 points, 95\,\% CI 4.4--17.8) but saturated at 10 files for
 small data. On executor time the small-data trend was not monotonic, so there it is only
 partly supported. For tuning, H1 is \emph{supported by our pre-registered test}: the best
 setting (1--2 partitions for small data, 4 for large) and the speed-up differed between

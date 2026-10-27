@@ -9,8 +9,8 @@ each action. In 250 measured runs on synthetic workloads, the best partition cou
 7.9--11.3$\times$ faster than Spark's default of 200, and compaction cut run time by
 25--66\,\% on fragmented input but did nothing for single-file input. A full partition search
 paid for itself within three runs, and compaction after one. On four unseen workloads CAO-DF
-lowered estimated total cost by 47\,\% on average (95\,\% CI 30.5--62.3\,\%), lost to the default
-in 2 of 16 cases, and avoided the losses of a speed-only strategy when $N = 1$. All costs are
+lowered estimated machine-time cost by 47.3\,\% on average (95\,\% CI 30.5--62.3\,\%), lost to
+the default in 2 of 16 cases, and avoided the losses of a speed-only strategy when $N = 1$. All costs are
 estimated from cloud prices, and all runs use one laptop.
 \end{abstract}
 
