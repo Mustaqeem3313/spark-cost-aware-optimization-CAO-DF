@@ -3,12 +3,13 @@
 
 | | |
 |---|---|
-| **Researcher** | Mustaqeem Shaikh · M.Sc. Computer Science (Year 2) · Roll No. 9251 |
+| **Researcher** | Shaikh Mustaqeem Ishratali · M.Sc. Computer Science (Year 2, Sem III) · Roll No. 9251 · AKI's Poona College of Arts, Science & Commerce, Pune (SPPU) |
+| **Guide** | Dr. Reshma Kadam |
 | **Target venue** | IEEE-sponsored regional conference (Xplore-indexed) — *specific venue and deadline still to be confirmed (see §32)* |
 | **Code repository** | https://github.com/Mustaqeem3313/spark-cost-aware-optimization-CAO-DF |
-| **Document status** | Living document · snapshot of **20 October 2026** |
+| **Document status** | Living document · snapshot of **28 October 2026** (project wrap-up) |
 | **Supersedes** | The phase checkboxes in `Final_Execution_Plan.md` (those were never updated after Phase 4) |
-| **Infrastructure** | Local-first, free tier only · Windows laptop (2 physical / 4 logical cores, 7.9 GB RAM) |
+| **Infrastructure** | Local-first, free tier only · study laptop Intel Core i5-1335U (10 cores / 12 threads), 15.7 GB RAM, Windows 11 (see `environment.md`) |
 
 > **How to read this document.** Sections 1–9 define *what* the research is. Sections 10–13 define *how* it will be tested. Sections 14–16 describe *what has been built and learned so far*. Sections 17–20 give the *plan and next steps*. Sections 21–25 cover *data, analysis and paper writing*. Sections 26–32 cover risks, reproducibility, decisions and open questions. Appendices hold the reference list, CSV schema, command cheat-sheet and result tables.
 
@@ -75,15 +76,16 @@ Optimizing a Spark pipeline is not free: tuning shuffle partitions or compacting
 
 > *"I'm not making Spark faster. I'm researching whether making it faster — or compacting its data — is worth the cost for a given workload."*
 
-### 1.4 Status dashboard (26 Oct 2026)
+### 1.4 Status dashboard (28 Oct 2026)
 
 | Metric | Value |
 |---|---|
 | Total phases | **12** (Phase 0 – Phase 11) |
 | Completed | **11** (Phases 0 – 10) |
-| In progress | **1** — Phase 11 (paper final; guide review, PDF eXpress, push and submission left) |
+| In progress | **1** — Phase 11, wrap-up only: research and writing are complete (8-page IEEE paper, 39-page college black book). Left: guide review and signatures, signed progress reports in the Annexure, printing/binding, push of tag `v1.0-paper`, venue submission. |
 | Not started | **0** |
-| Overall progress | `███████████░` **11 / 12 complete (92 %)** |
+| Overall progress | `███████████▉` **11 / 12 complete; Phase 11 ≈ 97 %** |
+| College deliverable | Research Work–I black book: `C:\Mustaqeem\Black_Book\CAO-DF_Black_Book.docx/.pdf` (39 pages) + `CAO-DF_Front_Page.pdf` (high-resolution cover). Kept outside the repository. |
 | Experimental data collected | **Formal A1** (E3, 160 runs, tag `a1-formal-v2`) · **Formal A2** (E5, 90 runs, tag `a2-formal-v2`) · A2 pilot (E4, 54 runs) · **Framework validation** (E6, 120 runs) |
 | Schedule | Re-baselined in §19.2; college deadline **15 Nov 2026** |
 
@@ -742,6 +744,10 @@ Generate `environment.md` from real hardware/software and the fixed config const
 | 20 Oct | This master document; environment rebuilt on the official study machine; codebase refactored |
 | **21 Oct** | **Phase 6 done:** E2 sweep + **formal A1** (160 runs) · **Phase 7 done:** `compaction.py`, A2 pilot (gate passed), **formal A2** (90 runs) · research log started |
 | 22 Oct | Literature matrix corrected and extended to 29 papers; A1 outlier sensitivity check |
+| **23 Oct** | **Phase 8:** cost model, break-even table, sensitivity · **Phase 9:** decision framework, E6 validation (120 runs), H2 supported · paper skeleton (IEEEtran) |
+| 26 Oct | 9 colour-coded system design diagrams (PlantUML) · **Phase 10:** `stats_analysis.py`, analysis notebook, H1/H2 verdicts (tag `phase10-analysis`) |
+| **27 Oct** | **Phase 11:** final 8-page IEEE paper, reference check 32/32, similarity check, AI-use disclosure, interactive decision tool (tag `v1.0-paper`) · commits pushed to GitHub |
+| **27–28 Oct** | **College black book** (Research Work–I, 39 pages) built on the college template; high-resolution front page PDF; all project documents updated for wrap-up |
 
 ### 16.2 Deliverables produced
 
@@ -757,7 +763,14 @@ Generate `environment.md` from real hardware/software and the fixed config const
 | A1 runner, shuffle-scaling gate, exploratory sweep, **formal A1** | 6 | ✅ (tag `a1-formal-v2`) |
 | `compaction.py`, A2 runner, A2 pilot, **formal A2** | 7 | ✅ (tag `a2-formal-v2`) |
 | `docs/research_log.md` (findings, limitations, decisions) | 6–7 | ✅ (living document) |
-| GitHub repository | — | ✅ https://github.com/Mustaqeem3313/spark-cost-aware-optimization-CAO-DF |
+| GitHub repository | — | ✅ https://github.com/Mustaqeem3313/spark-cost-aware-optimization-CAO-DF (main + 4 tags pushed; `v1.0-paper` still local) |
+| `cost_model.py`, `Cost_Model_Assumptions.md`, break-even and sensitivity tables | 8 | ✅ |
+| `decision_framework.py` (+ `--interactive` tool), E6 validation table | 9 | ✅ (tag `e6-validation`) |
+| System design diagrams (9, PlantUML + PNG/SVG/PDF) | 11 | ✅ `paper/system_design/` |
+| `stats_analysis.py`, `analysis/analysis.ipynb` (+ HTML, 15 figures) | 10 | ✅ (tag `phase10-analysis`) |
+| IEEE paper (8 pages, PDF/DOCX), `docs/similarity_report.md` | 11 | ✅ (tag `v1.0-paper`) |
+| College black book (DOCX + PDF, 39 pages, 21 chapters, 19 figures, 10 tables) | 11 | ✅ `C:\Mustaqeem\Black_Book\` (not in the repo) |
+| High-resolution front page PDF (600 dpi emblems, vector text) | 11 | ✅ `C:\Mustaqeem\Black_Book\CAO-DF_Front_Page.pdf` |
 
 ### 16.3 The v1 pilot — what it showed (and why we redesigned)
 
@@ -844,8 +857,8 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 | **7** | A2 — file compaction | Measure compaction cost (`Copt`) and benefit | A2 rows + compaction cost/benefit table | ✅ **Done** (21 Oct) |
 | **8** | Cost model + break-even | Convert measurements to estimated cost; compute OBEP | `cost_model.py`, `Cost_Model_Assumptions.md`, break-even table | ✅ Done (23 Oct) |
 | **9** | Decision framework | Rule-based {Nothing \| Tune \| Compact}; validate vs static | `decision_framework.py`, validation table | ✅ Done (23 Oct) |
-| **10** | Analysis, figures, hypotheses | Statistics, 7 figures, H1/H2 verdicts | `analysis/analysis.ipynb`, figures | ☐ Not started |
-| **11** | Paper, revision, submission | IEEE paper + reproducibility package | Submission-ready paper | ☐ Not started |
+| **10** | Analysis, figures, hypotheses | Statistics, 7 figures, H1/H2 verdicts | `analysis/analysis.ipynb`, figures | ✅ Done (26 Oct) |
+| **11** | Paper, revision, submission | IEEE paper + reproducibility package + college black book | Submission-ready paper, black book | ◐ Wrap-up (paper + black book done 27–28 Oct; review, signatures, submission left) |
 
 ### 17.2 Remaining phases in detail
 
@@ -890,8 +903,14 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 - [x] Draft §§ 1–5 early (they do not depend on results); write §§ 6–8 directly from Phase 10 outputs.
 - [x] Similarity check (`docs/similarity_report.md`, local proxy: 0.0 % vs cited abstracts); AI-assistance disclosure in the Acknowledgment (IEEE policy); reference verification (`tools/check_references.py`, 32/32).
 - [x] IEEE template, author details, clickable links, final polish (8 pages); tag `v1.0-paper`.
-- [ ] Guide review; PDF eXpress validation (needs the venue's conference ID); push; submission (author).
-- **Deliverable:** submission-ready paper + package.
+- [x] Push commits to GitHub (main and tags up to `phase10-analysis`).
+- [x] College black book (Research Work–I): college template, Times New Roman 12/14–16 pt, 1.15 spacing, index with page numbers, lists of figures/tables, 21 chapters incl. System Design (one diagram per page), Bibliography, Appendix, Annexure; DOCX + PDF (28 Oct).
+- [x] High-resolution front page PDF (`CAO-DF_Front_Page.pdf`).
+- [ ] Push tag `v1.0-paper` (`git push origin v1.0-paper`).
+- [ ] Guide review of paper and black book; revisions.
+- [ ] Guide-signed progress reports into the Annexure; signatures on the certificate; print and bind.
+- [ ] PDF eXpress validation (needs the venue's conference ID); venue submission (author).
+- **Deliverable:** submission-ready paper + package + black book.
 
 ### 17.3 Definition of Done (end of project)
 
@@ -904,7 +923,8 @@ Large/small = 33.8× (low) and 41.5× (high); high/low = 4.5× (small) and 5.5×
 | 5 | Cost model (published pricing + measured usage, documented assumptions) | ✅ |
 | 6 | Decision framework (rule-based Nothing / Tune / Compact) | ✅ |
 | 7 | Results (7 figures, break-even curves, H1/H2 verdicts) | ✅ (26 Oct; `analysis/analysis.ipynb`) |
-| 8 | Reproducibility package (code + configs + instructions) | ◐ (README + tags done; push to GitHub pending) |
+| 8 | Reproducibility package (code + configs + instructions) | ◐ (README, code and data pushed; tag `v1.0-paper` push pending) |
+| 9 | College black book (Research Work–I) | ✅ (28 Oct; 39 pages; signatures and Annexure left) |
 
 ---
 
@@ -930,10 +950,10 @@ Phase  7 A2 compaction         ████████████ 100 %  ✅ (
 Phase  8 Cost model            ████████████ 100 %  ✅ (23 Oct)
 Phase  9 Decision framework    ████████████ 100 %  ✅ (23 Oct)
 Phase 10 Analysis & figures    ████████████ 100 %  ✅ (26 Oct)
-Phase 11 Paper & submission    ███████████░  ~95 %  ◐ (final paper; review + submission left)
+Phase 11 Paper & submission    ███████████▉  ~97 %  ◐ (paper + black book done; review, signatures, submission left)
 ```
 
-> **Reading the numbers.** By *count* the project is two-thirds through its phases, but the remaining phases (cost model, framework, analysis, paper) carry most of the intellectual and writing effort.
+> **Reading the numbers.** All research, analysis and writing are complete. What remains is administrative: guide review, signatures, printing, pushing the final tag and submitting.
 
 ---
 
@@ -947,10 +967,10 @@ Phase 11 Paper & submission    ███████████░  ~95 %  ◐ 
 | 2 | Workload generator + instrumentation + pilot (P4–5) | ✅ P4 on 30 Aug; P5 verified 12 Sep |
 | 3 | A1 experiments (P6) | ✅ Pilot 11 Oct → redesign; sweep + **formal run 21 Oct** |
 | 4 | A2 (P7) | ✅ Pilot + formal run 21 Oct |
-| 5 | Cost model (P8) | ☐ |
-| 6 | Framework (P9) | ☐ |
-| 7 | Analysis (P10) | ☐ |
-| 8 | Paper (P11) | ☐ |
+| 5 | Cost model (P8) | ✅ 23 Oct |
+| 6 | Framework (P9) | ✅ 23 Oct (E6 validation) |
+| 7 | Analysis (P10) | ✅ 26 Oct |
+| 8 | Paper (P11) | ✅ Paper 27 Oct · black book 28 Oct (well ahead of the re-baselined R5 week) |
 
 The first two weeks of work were completed quickly; the project then stalled for several weeks (mid-Sep → early Oct) before the A1 pilot. The original plan would have ended ≈ 24–27 Oct 2026.
 
@@ -980,17 +1000,21 @@ The first two weeks of work were completed quickly; the project then stalled for
 
 ## 20. Next Steps
 
-### 20.1 Immediate (next working session)
+### 20.1 Wrap-up checklist (from 28 Oct 2026; college deadline 15 Nov 2026)
 
-*Steps 1–8 of the 20 Oct list (reboot, RAM check, archive v1, environment, gate, formal A1, commit/tag) and the A2 build and runs were completed on 21 Oct 2026.*
+*All earlier steps (formal A1/A2, Phases 8–10, paper, black book) are complete.*
 
-1. ✅ Choose the cloud **pricing basis** (EC2 vCPU-hour / Glue DPU / Databricks DBU) and the cost proxy.
-2. ✅ Phase 8: `Cost_Model_Assumptions.md` + `cost_model.py`; break-even table and sensitivity.
-3. ☐ Push commits and tags to GitHub (needs the personal-account login on this laptop).
+1. ☐ Push the final tag: `git push origin v1.0-paper` (main is already pushed).
+2. ☐ Send the paper PDF and black book PDF to the guide (Dr. Reshma Kadam) for review; apply corrections and rebuild (`Black_Book\build.py` two-pass + `pages.ps1`).
+3. ☐ Collect the guide-signed project progress reports and place them after the Annexure page.
+4. ☐ Print and bind the black book; obtain signatures on the certificate (guide, HOD, examiners).
+5. ☐ Confirm the target conference (§32 Q2); run IEEE PDF eXpress with its conference ID; submit.
+6. ☐ Optional: GitHub release from `v1.0-paper` with the paper PDF attached; add a licence (§32 Q5).
 
 ### 20.2 Then
 
-4. ◐ Phase 9 ✅ (23 Oct); Phase 10 → 11 as in §17.2; draft paper §§ I–V in parallel (`paper/`, IEEEtran LaTeX).
+- Viva / presentation preparation: a short slide deck (problem, cost model, break-even, decision rule, E6 result, limitations) and answers to §30.
+- Extended (long-form) report: postponed by the author; decide after submission.
 
 ### 20.3 Housekeeping
 
@@ -1505,16 +1529,16 @@ python src/run_a1_experiments.py --partitions 1 2 4 8 16 50 200 400
 
 | # | Question | Why it matters |
 |---|---|---|
-| Q1 | **What is the real submission deadline** (college and/or conference)? | The original 8-week plan has run out; §19.2 assumes ≈ 5 more weeks |
-| Q2 | **Which conference** is the target (name, CFP, page limit, template, blind/non-blind)? | Fixes page budget, formatting and anonymization |
-| Q3 | Does the guide expect **any cloud validation** (even a small one)? | Affects scope and the limitations wording |
-| Q4 | Who are the **co-authors / guide** on the paper? | Author block and acknowledgments |
-| Q5 | Is the **repository public**, and under what licence? | Reproducibility statement; blind-review anonymization |
-| Q6 | Is the college report **indexed by a similarity checker** (Turnitin repository)? | Self-similarity with the paper |
-| Q7 | Which **cloud pricing basis** should be cited (EC2 vCPU-hour, Glue DPU-hour, Databricks DBU)? | Phase 8 assumptions |
-| Q8 | Can free RAM reach **≥ 3.5 GB** after a reboot? | Determines whether a 2 g heap fallback is needed |
-| Q9 | Is a **second machine** available to repeat a subset of runs? | Would strengthen external validity |
-| Q10 | Should the **AQE-on** comparison be included as an extra arm or left as future work? | Scope vs time |
+| Q1 | ~~What is the real submission deadline?~~ **Resolved:** college deadline 15 Nov 2026; conference deadline depends on Q2 | The original 8-week plan has run out; §19.2 assumes ≈ 5 more weeks |
+| Q2 | **Which conference** is the target (name, CFP, page limit, template, blind/non-blind)? *Open.* | Fixes page budget, formatting and anonymization; needed for PDF eXpress |
+| Q3 | Does the guide expect **any cloud validation** (even a small one)? *Ask at guide review.* | Affects scope and the limitations wording |
+| Q4 | ~~Who are the co-authors / guide on the paper?~~ **Resolved 27 Oct:** sole author; guide thanked in the Acknowledgment | Author block and acknowledgments |
+| Q5 | Is the **repository public**, and under what licence? *Public; licence open.* | Reproducibility statement; blind-review anonymization |
+| Q6 | Is the college report **indexed by a similarity checker** (Turnitin repository)? *Open — check before submitting both.* | Self-similarity between paper and black book |
+| Q7 | ~~Cloud pricing basis?~~ **Resolved 22–23 Oct:** EC2 on-demand m6i, Mumbai, USD 0.0505/vCPU-hour | Phase 8 assumptions |
+| Q8 | ~~Free RAM ≥ 3.5 GB?~~ **Resolved:** study laptop has 15.7 GB RAM | Determines whether a 2 g heap fallback is needed |
+| Q9 | Is a **second machine** available to repeat a subset of runs? *Not used; stated as a limitation.* | Would strengthen external validity |
+| Q10 | ~~AQE-on comparison?~~ **Resolved:** left as future work (Limitations / Future Scope) | Scope vs time |
 
 ---
 

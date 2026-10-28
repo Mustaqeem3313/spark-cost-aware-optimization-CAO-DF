@@ -26,19 +26,19 @@
 25,7,A2 compaction,E5 formal A2: 90 measured runs,Done,tag a2-formal-v2
 26,-,Documentation,"Research log (findings, limitations L1-L9, decisions)",Done,docs/research_log.md
 27,-,Documentation,Update master document status (Phases 6-7),Done,"Dashboard, phases, timeline, next steps updated (22 Oct)"
-28,-,Repository,Push commits + tags to personal GitHub,Blocked,Log in as personal account (403 on Clickflow account)
+28,-,Repository,Push commits + tags to personal GitHub,Done,"main + tags a1-formal-v2, a2-formal-v2, e6-validation, phase10-analysis pushed; v1.0-paper still local"
 29,-,Repository,Choose licence,Pending,Your decision
 30,8,Cost model,Choose pricing basis (EC2 vCPU-hr / Glue DPU / Databricks DBU),Done,"EC2 on-demand m6i, Mumbai, USD 0.0505/vCPU-h"
 31,8,Cost model,"Cost_Model_Assumptions.md (official pricing, access date, proxies)",Done,Cost_Model_Assumptions.md
 32,8,Cost model,Define Copt for A1 (search vs rule) and A2 (compaction job),Done,A1 search (primary) / rule (sensitivity); A2 measured job
 33,8,Cost model,"cost_model.py: Crun, Copt, TC(a,N), N*",Done,src/cost_model.py
 34,8,Cost model,"Break-even table, N in {1,5,10,50}; sensitivity +/-50% and both proxies",Done,"results/processed/breakeven_table.csv, cost_sensitivity.csv"
-35,9,Decision framework,"decision_framework.py: rule-based decide(w, N) with noise-floor threshold",Done,"Nearest measured workload; delta = 10% (src/decision_framework.py)"
+35,9,Decision framework,"decision_framework.py: rule-based decide(w, N) with noise-floor threshold",Done,Nearest measured workload; delta = 10% (src/decision_framework.py)
 36,9,Decision framework,"Generate unseen validation workloads (new seeds, medium volume)",Done,"4 workloads, seeds 701-704 (workload_generator.py --validation)"
-37,9,Decision framework,Validate: Static vs Framework total estimated cost,Done,"E6 120 runs; H2 supported (research log 3c)"
-38,10,Analysis,"Descriptive stats, effect sizes, bootstrap CIs",Done,"src/stats_analysis.py + analysis/analysis.ipynb (research log 3d)"
-39,10,Analysis,7 figures (F1-F7) + tables T1-T4,Done,"6 data figures + algorithm figure; tables I-IV in paper"
-40,10,Analysis,H1 / H2 verdicts,Done,"H1 supported (A1 by pre-registered test; A2 on wall); H2 supported"
+37,9,Decision framework,Validate: Static vs Framework total estimated cost,Done,E6 120 runs; H2 supported (research log 3c)
+38,10,Analysis,"Descriptive stats, effect sizes, bootstrap CIs",Done,src/stats_analysis.py + analysis/analysis.ipynb (research log 3d)
+39,10,Analysis,7 figures (F1-F7) + tables T1-T4,Done,6 data figures + algorithm figure; tables I-IV in paper
+40,10,Analysis,H1 / H2 verdicts,Done,H1 supported (A1 by pre-registered test; A2 on wall); H2 supported
 41,11,Paper,Choose venue / format (IEEE conference template),Done,"IEEEtran conference, experimental-paper structure (venue TBD)"
 42,11,Paper,Draft I Introduction,Done,"RQ1-RQ3, H1-H2, contributions, headline results"
 43,11,Paper,Draft II Background / Related Work,Done,paper/sections/02_related_work.tex
@@ -47,10 +47,17 @@
 46,11,Paper,Draft V Experimental methodology,Done,"paper/sections/05_methodology.tex (Experimental Setup, Tables I-II)"
 47,11,Paper,"Draft VI Results (A1, A2, break-even, validation)",Done,"paper/sections/06_results.tex (Figs 2-7, Tables III-IV, H1/H2 verdicts)"
 48,11,Paper,Draft VII Discussion + Threats to validity,Done,"07_discussion.tex, 08_threats.tex (L1-L13)"
-49,11,Paper,Draft VIII Conclusion + Abstract,Done,"8 pages incl. references; PDF/DOCX exported"
-50,11,Paper,"Reference verification, similarity check, AI-use disclosure",Done,"tools/check_references.py 32/32; docs/similarity_report.md 0.0% vs cited abstracts; disclosure in Acknowledgment (IEEE policy)"
+49,11,Paper,Draft VIII Conclusion + Abstract,Done,8 pages incl. references; PDF/DOCX exported
+50,11,Paper,"Reference verification, similarity check, AI-use disclosure",Done,tools/check_references.py 32/32; docs/similarity_report.md 0.0% vs cited abstracts; disclosure in Acknowledgment (IEEE policy)
 51,11,Paper,Guide review + revision,Pending,
-52,11,Paper,Reproducibility package + final tag; submit by 15 Nov,In progress,"Tag v1.0-paper created locally; push + venue submission by author (deadline 15 Nov 2026)"
+52,11,Paper,Reproducibility package + final tag; submit by 15 Nov,In progress,Tag v1.0-paper created locally (push pending); venue submission by author (college deadline 15 Nov 2026)
 53,11,Paper,"System design diagrams (use case, component, class, ERD, 2 sequence, 2 activity, deployment)",Done,"paper/system_design/ (PlantUML src + PNG/SVG/PDF, colour-coded; not in the 8-page paper)"
 54,11,Paper,"Author details, links, final polish",Done,"Author block, guide acknowledgment, clickable links (hyperref), Times-metric font; 8 pages"
-55,9,Framework,Interactive decision tool,Done,"decision_framework.py --interactive; tests/test_decision_framework.py"
+55,9,Framework,Interactive decision tool,Done,decision_framework.py --interactive; tests/test_decision_framework.py
+56,11,Black book,"College black book (Research Work-I) on college template, index with page numbers",Done,C:\Mustaqeem\Black_Book\CAO-DF_Black_Book.docx/.pdf (39 pages; not in repo)
+57,11,Black book,High-resolution front page PDF,Done,"C:\Mustaqeem\Black_Book\CAO-DF_Front_Page.pdf (vector text, 600 dpi emblems)"
+58,11,Repository,Push tag v1.0-paper,Pending,git push origin v1.0-paper
+59,11,Black book,Guide review of black book + revisions,Pending,Rebuild with build.py two-pass + pages.ps1
+60,11,Black book,Guide-signed progress reports in Annexure; certificate signatures; print and bind,Pending,Annexure page is chapter 21
+61,11,Paper,Choose conference; PDF eXpress check; submit,Pending,Needs venue conference ID
+62,-,Documentation,"Update master document, README, research log, checklist for wrap-up",Done,28 Oct 2026

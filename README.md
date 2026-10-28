@@ -1,7 +1,9 @@
 # CAO-DF: Cost-Aware Optimization Decision Framework for Apache Spark
 
 **A Cost-Aware Decision Framework for Adaptive Optimization of Apache Spark Data Pipelines**
-M.Sc. research project, Mustaqeem Shaikh.
+M.Sc. Computer Science research project (Research Work–I), Shaikh Mustaqeem Ishratali, AKI's Poona College of Arts, Science & Commerce, Pune (Savitribai Phule Pune University). Guide: Dr. Reshma Kadam.
+
+**Status (28 Oct 2026):** experiments, analysis and the 8-page IEEE paper (`paper/`, tag `v1.0-paper`) are complete. The college report (black book) is complete; guide review and submission remain.
 
 Optimizations such as shuffle-partition tuning or file compaction are not free: they cost time to find or apply, and they pay off only if the pipeline then runs often enough. CAO-DF models the total cost of an optimization action *a* over *N* pipeline runs
 
